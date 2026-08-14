@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PulseID.Application.Interfaces.Repositories
 {
-    public interface IAlleryRepository : IRepository<Allergy>
+    public interface IAllergyRepository : IRepository<Allergy>
     {
         Task<Allergy?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Allergy>> SearchByNameAsync(string term, CancellationToken cancellationToken = default);

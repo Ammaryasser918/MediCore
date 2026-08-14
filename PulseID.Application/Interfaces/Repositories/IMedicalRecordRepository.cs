@@ -10,7 +10,12 @@ namespace PulseID.Application.Interfaces.Repositories
 {
     public interface IMedicalRecordRepository : IRepository<MedicalRecord>
     {
-        
+        Task<IReadOnlyList<MedicalRecord>> GetByPatientAsync(Guid patientId, CancellationToken cancellationToken = default);
         Task<MedicalRecord?> GetWithDetailsAsync(Guid medicalRecordId, CancellationToken cancellationToken = default);
+
+        Task<MedicalRecord?> GetLatestVersionAsync(Guid medicalRecordId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<MedicalRecord>> GetByDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default);
+
     }
 }

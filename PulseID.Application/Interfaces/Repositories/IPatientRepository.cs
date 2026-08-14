@@ -13,7 +13,7 @@ namespace PulseID.Application.Interfaces.Repositories
         Task<Patient?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<Patient?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
 
-        Task<Patient?> ExistsByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
+        Task<bool> ExistsByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
 
         // Gets the patient with the full profile (Allergies, Chronic Diseases, Emergency Contacts, ...)
         Task<Patient?> GetWithFullProfileAsync(Guid patientId, CancellationToken cancellationToken = default);
