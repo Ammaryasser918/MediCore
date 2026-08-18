@@ -14,7 +14,7 @@ namespace PulseID.Application.Interfaces
         IPharmacistRepository Pharmacists { get; }
         IHospitalRepository Hospitals { get; }
         IDepartmentRepository Departments { get; }
-        IPharmacyRepository Pharmacys { get; }
+        IPharmacyRepository Pharmacies { get; }
         IMedicalRecordRepository MedicalRecords { get; }
         IPrescriptionRepository Prescriptions { get; }
         IOTPRepository Otps { get; }

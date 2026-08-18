@@ -37,8 +37,8 @@ namespace PulseID.Domain.Entities
         readonly List<EmergencyContact> _emergencyContacts = new List<EmergencyContact>();
         public IReadOnlyCollection<EmergencyContact> EmergencyContacts => _emergencyContacts.AsReadOnly();
 
-        readonly List<Prescription> _prescriptions = new List<Prescription>();
-        public IReadOnlyCollection<Prescription> Prescriptions => _prescriptions.AsReadOnly();
+        //readonly List<Prescription> _prescriptions = new List<Prescription>();
+        //public IReadOnlyCollection<Prescription> Prescriptions => _prescriptions.AsReadOnly();
 
         readonly List<MedicalRecord> _medicalRecords = new List<MedicalRecord>();
         public IReadOnlyCollection<MedicalRecord> MedicalRecords => _medicalRecords.AsReadOnly();

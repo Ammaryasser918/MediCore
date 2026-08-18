@@ -18,6 +18,7 @@ namespace PulseID.Domain.Entities
         public string FullName { get; private set; } = default!;
         public string SyndicateNumber { get; private set; } = default!;
         public string? SyndicateDocumentPath { get; private set; }
+        public string NationalId { get; private set; } = default!;
         public string Specialization { get; private set; } = default!;
         public string PhoneNumber { get; private set; } = default!;
         public string? PersonalImagePath { get; private set; }
@@ -31,8 +32,8 @@ namespace PulseID.Domain.Entities
 
         Doctor() { }
 
-        public Doctor(Guid userId, string fullName, string syndicateNumber, string syndicateDocumentPath, string specialization,
-            string phoneNumber, Guid departmentId, string? personalImagePath = null)
+        public Doctor(Guid userId, string fullName, string syndicateNumber, string syndicateDocumentPath, string nationalId, 
+            string specialization, string phoneNumber, Guid departmentId, string? personalImagePath = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is Required", nameof(userId));
@@ -40,6 +41,8 @@ namespace PulseID.Domain.Entities
                 throw new ArgumentException("Full Name is required", nameof(fullName));
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("Phone number is required", nameof(phoneNumber));
+            if (string.IsNullOrWhiteSpace(nationalId))
+                throw new ArgumentException("National Id is required", nameof(nationalId));
 
             UserId = userId;
             FullName = fullName;
@@ -49,6 +52,7 @@ namespace PulseID.Domain.Entities
             PhoneNumber = phoneNumber;
             DepartmentId = departmentId;
             PersonalImagePath = personalImagePath;
+            NationalId = nationalId;
             Status = DoctorStatus.Pending;
         }
 
