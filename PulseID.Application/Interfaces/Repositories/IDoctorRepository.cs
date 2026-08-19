@@ -13,6 +13,7 @@ namespace PulseID.Application.Interfaces.Repositories
     {
         Task<Doctor?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<Doctor?> GetBySyndicateNumberAsync(string syndicateNumber, CancellationToken cancellationToken = default);
+        Task<Doctor?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Doctor>> GetByDepartmentAsync(Guid departmentId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Doctor>> GetByStatusAsync(DoctorStatus status, CancellationToken cancellationToken = default);
 

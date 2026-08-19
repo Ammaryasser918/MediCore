@@ -20,11 +20,13 @@ namespace PulseID.Domain.Entities
 
         public Guid HospitalId { get; private set; }
         public Hospital Hospital { get; private set; } = default!;
-
         public DateTime VisitDate { get; private set; }
         public string Diagnosis { get; private set; } = default!;
         public string? Symptoms { get; private set; }
         public string? Notes { get; private set; }
+
+        public Guid? PrescriptionId { get; private set; } = default;
+        public Prescription? Prescription { get; private set; } = default;
 
         public MedicalRecordStatus Status { get; private set; } = MedicalRecordStatus.Active;
 
@@ -33,6 +35,7 @@ namespace PulseID.Domain.Entities
 
         public Guid? PreviousVersionId { get; private set; }
         public MedicalRecord? PreviousVersion { get; private set; }
+        public Guid RootRecordId { get; private set; }
 
 
 
@@ -40,11 +43,13 @@ namespace PulseID.Domain.Entities
         readonly List<MedicalFile> _files = new List<MedicalFile>();
         public IReadOnlyCollection<MedicalFile> MedicalFiles => _files.AsReadOnly();
 
-        readonly List<Prescription> _prescriptions = new List<Prescription>();
-        public IReadOnlyCollection<Prescription> Prescriptions => _prescriptions.AsReadOnly();
+        //readonly List<Prescription> _prescriptions = new List<Prescription>();
+        //public IReadOnlyCollection<Prescription> Prescriptions => _prescriptions.AsReadOnly();
 
         MedicalRecord() { }
 
+        
+        // This Constructor Initialize the Root Medical Record For The First Time 
         public MedicalRecord(Guid patientId, Guid doctorId, Guid hospitalId, DateTime visitDate,
                              string diagnosis, string? symptoms = null, string? notes = null, Guid? previousVersionId = null)
         {
@@ -59,18 +64,36 @@ namespace PulseID.Domain.Entities
             Symptoms = symptoms;
             Notes = notes;
             PreviousVersionId = previousVersionId;
+            RootRecordId = Id;
+        }
+
+        // This Constructor For Creating New Version of The Medical Record
+        private MedicalRecord(Guid patientId, Guid doctorId, Guid hospitalId, DateTime visitDate,
+                              string diagnosis, string? symptoms, string? notes, Guid previousVersionId, Guid rootRecordId)
+        {
+            PatientId = patientId;
+            DoctorId = doctorId;
+            HospitalId = hospitalId;
+            VisitDate = visitDate;
+            Diagnosis = diagnosis;
+            Symptoms = symptoms;
+            Notes = notes;
+
+            PreviousVersionId = previousVersionId;
+            RootRecordId = rootRecordId;
+
+            Status = MedicalRecordStatus.Active;
         }
 
 
         public Prescription AddPrescription(string? notes)
         {
             EnsureIsEditable();
-            if (_prescriptions.Count >= 1)
+            if (Prescription is not null)
                 throw new BusinessRuleViolationException("This version of medical record already has a prescription, make a new version of medical record to add a new prescription");
-            var prescription = new Prescription(Id, notes);
-            _prescriptions.Add(prescription);
+            Prescription = new Prescription(Id, notes);
             MarkAsUpdated();
-            return prescription;
+            return Prescription;
         }
 
         public MedicalRecord CreateNewVersion(string diagnosis,
@@ -80,7 +103,7 @@ namespace PulseID.Domain.Entities
                 throw new BusinessRuleViolationException("This Version of Medical Record has already Superseded, Can't make a new version of it.");
 
             var newVersion = new MedicalRecord(PatientId, DoctorId, HospitalId, VisitDate,
-                diagnosis, symptoms, notes, previousVersionId: Id);
+                diagnosis, symptoms, notes, previousVersionId: Id, rootRecordId:RootRecordId);
 
             MarkAsSuperseded();
 

@@ -12,6 +12,7 @@ namespace PulseID.Application.Interfaces.Repositories
     public interface IPharmacistRepository : IRepository<Pharmacist>
     {
         Task<Pharmacist?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+        Task<Pharmacist?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
         Task<Pharmacist?> GetBySyndicateNumberAsync(string syndicateNumber, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Pharmacist>> GetByStatusAsync(PharmacistStatus status, CancellationToken cancellationToken = default);
     }

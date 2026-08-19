@@ -16,8 +16,8 @@ namespace PulseID.Domain.Entities
         public Hospital Hospital { get; private set; } = default!;
 
 
-        readonly List<Doctor> _doctor = new List<Doctor>();
-        public IReadOnlyCollection<Doctor> Doctors => _doctor.AsReadOnly();
+        readonly List<Doctor> _doctors = new List<Doctor>();
+        public IReadOnlyCollection<Doctor> Doctors => _doctors.AsReadOnly();
 
         Department() { }
 

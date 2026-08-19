@@ -13,7 +13,7 @@ namespace PulseID.Application.Interfaces.Repositories
         Task<IReadOnlyList<MedicalRecord>> GetByPatientAsync(Guid patientId, CancellationToken cancellationToken = default);
         Task<MedicalRecord?> GetWithDetailsAsync(Guid medicalRecordId, CancellationToken cancellationToken = default);
 
-        Task<MedicalRecord?> GetLatestVersionAsync(Guid medicalRecordId, CancellationToken cancellationToken = default);
+        Task<MedicalRecord?> GetLatestVersionAsync(Guid rootRecordId, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<MedicalRecord>> GetByDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default);
 

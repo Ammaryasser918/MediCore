@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace PulseID.Domain.Entities
 {
-    public class AuditLog : BaseEntity
+    public class AuditLog
     {
+        public Guid Id { get; private set; }
         public Guid UserId { get; private set; } = default!;
         public string UserRole { get; private set; } = default!;
         public AuditActionType ActionType { get; private set; }
@@ -39,7 +40,7 @@ namespace PulseID.Domain.Entities
             EntityId = entityId;
             Details = details;
             IPAddress = ipAddress;
-
+            Timestamp = DateTime.UtcNow;
         }
 
 
