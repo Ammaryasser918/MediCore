@@ -26,8 +26,8 @@ namespace PulseID.Infrastructure.Persistence.Repositories
                 .Include(m => m.Prescription).ThenInclude(p => p.PrescriptionItems)
                 .FirstOrDefaultAsync(m => m.Id == medicalRecordId, cancellationToken);
 
-        public Task<MedicalRecord?> GetLatestVersionAsync(Guid rootRecrdId, CancellationToken cancellationToken = default)
-            => _dbSet.FirstOrDefaultAsync(m => m.RootRecordId == rootRecrdId && m.Status == MedicalRecordStatus.Active
+        public Task<MedicalRecord?> GetLatestVersionAsync(Guid rootRecordId, CancellationToken cancellationToken = default)
+            => _dbSet.FirstOrDefaultAsync(m => m.RootRecordId == rootRecordId && m.Status == MedicalRecordStatus.Active
                                           && !m.IsDeleted, cancellationToken);
 
 
