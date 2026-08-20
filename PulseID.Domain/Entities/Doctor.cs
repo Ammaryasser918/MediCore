@@ -56,6 +56,15 @@ namespace PulseID.Domain.Entities
             Status = DoctorStatus.Pending;
         }
 
+        public void UpdatePersonalDetails(string phoneNumber, string specialization, string? personalImagePath)
+        {
+            PhoneNumber = phoneNumber;
+            Specialization = specialization;
+            if (!string.IsNullOrWhiteSpace(personalImagePath))
+                PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+
         public void Approve(Guid hospitalAdminId)
         {
             if (hospitalAdminId == Guid.Empty)

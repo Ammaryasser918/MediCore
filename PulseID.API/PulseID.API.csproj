@@ -13,10 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PulseID.Application\PulseID.Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\PulseID.Infrastructure\PulseID.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

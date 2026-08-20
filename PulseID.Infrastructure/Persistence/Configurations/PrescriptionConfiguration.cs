@@ -21,8 +21,8 @@ namespace PulseID.Infrastructure.Persistence.Configurations
             builder.Property(p => p.Notes).HasMaxLength(1000);
 
             builder.HasOne(p => p.MedicalRecord)
-                   .WithMany()
-                   .HasForeignKey(p => p.MedicalRecordId)
+                   .WithOne(m => m.Prescription)
+                   .HasForeignKey<Prescription>(p => p.MedicalRecordId)
                    .OnDelete(DeleteBehavior.Restrict);
 
 

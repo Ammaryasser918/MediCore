@@ -53,7 +53,7 @@ namespace PulseID.Domain.Entities
         Patient() { }
 
         public Patient(Guid userId, string nationalId, string fullName, DateTime dateOfBirth,
-            Gender gender, string phoneNumber, BloodType? bloodType = null)
+            Gender gender, string phoneNumber, BloodType? bloodType = null, string? address = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is required", nameof(userId));
@@ -73,7 +73,7 @@ namespace PulseID.Domain.Entities
             Gender = gender;
             PhoneNumber = phoneNumber;
             BloodType = bloodType;
-
+            Address = address;
         }
         
 
