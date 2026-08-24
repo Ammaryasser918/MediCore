@@ -96,14 +96,13 @@ namespace PulseID.Domain.Entities
             return Prescription;
         }
 
-        public MedicalRecord CreateNewVersion(string diagnosis,
-            string? symptoms = null, string? notes = null)
+        public MedicalRecord CreateNewVersion(Guid newDoctorId, Guid newHospitalId, string diagnosis, string? symptoms, string? notes)
         {
             if (Status == MedicalRecordStatus.Superseded)
                 throw new BusinessRuleViolationException("This Version of Medical Record has already Superseded, Can't make a new version of it.");
 
-            var newVersion = new MedicalRecord(PatientId, DoctorId, HospitalId, VisitDate,
-                diagnosis, symptoms, notes, previousVersionId: Id, rootRecordId:RootRecordId);
+            var newVersion = new MedicalRecord(PatientId, newDoctorId, newHospitalId, VisitDate,
+                diagnosis, symptoms, notes, previousVersionId: Id, rootRecordId: RootRecordId);
 
             MarkAsSuperseded();
 
