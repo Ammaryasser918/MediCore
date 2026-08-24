@@ -53,6 +53,13 @@ namespace PulseID.Domain.Entities
             Status = PharmacistStatus.Pending;
         }
 
+
+        public void UpdatePersonalDetails(string phoneNumber)
+        {
+            PhoneNumber = phoneNumber;
+            MarkAsUpdated();
+        }
+
         public void Approve(Guid pharmacyAdminId)
         {
             if (pharmacyAdminId == Guid.Empty)

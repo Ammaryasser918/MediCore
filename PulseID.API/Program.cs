@@ -1,4 +1,8 @@
 
+using PulseID.API.Middleware;
+using PulseID.Application;
+using PulseID.Infrastructure;
+
 namespace PulseID.API
 {
     public class Program
@@ -14,6 +18,10 @@ namespace PulseID.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddApplication();
+            builder.Services.AddInfrastructure(builder.Configuration);
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -24,7 +32,8 @@ namespace PulseID.API
             }
 
             app.UseHttpsRedirection();
-
+            //app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseGlobalExceptionHandling();
             app.UseAuthorization();
 
 
