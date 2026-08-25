@@ -40,10 +40,7 @@ namespace PulseID.Infrastructure.Persistence.Configurations
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasMany(p => p.PrescriptionItems)
-                   .WithOne(pi => pi.DispensedbyPharmacist)
-                   .HasForeignKey(pi => pi.DispensedByPharmacistId)
-                   .OnDelete(DeleteBehavior.Restrict);
+
 
             builder.Navigation(p => p.PrescriptionItems)
                 .HasField("_dispensedItems")

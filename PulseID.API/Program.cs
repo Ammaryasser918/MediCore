@@ -1,7 +1,12 @@
 
+using PulseID.API.Common;
 using PulseID.API.Middleware;
 using PulseID.Application;
+using PulseID.Application.Common.Interfaces;
+using PulseID.Domain.Entities;
+using PulseID.Domain.Enums;
 using PulseID.Infrastructure;
+using PulseID.Infrastructure.Persistence;
 
 namespace PulseID.API
 {
@@ -21,6 +26,11 @@ namespace PulseID.API
             builder.Services.AddApplication();
             builder.Services.AddInfrastructure(builder.Configuration);
 
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+
+
 
             var app = builder.Build();
 
@@ -31,14 +41,14 @@ namespace PulseID.API
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
             //app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseGlobalExceptionHandling();
+            app.UseHttpsRedirection();
             app.UseAuthorization();
 
 
             app.MapControllers();
-
+            
             app.Run();
         }
     }
