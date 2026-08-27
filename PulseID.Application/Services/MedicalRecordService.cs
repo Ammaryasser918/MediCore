@@ -5,6 +5,7 @@ using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
+using PulseID.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,14 +34,22 @@ namespace PulseID.Application.Services
             var doctor = await GetRequestingApprovedDoctorAsync(cancellationToken);
             var patient = await _unitOfWork.Patients.GetByIdAsync(dto.PatientId, cancellationToken)
                 ?? throw new NotFoundException(nameof(Patient), dto.PatientId);
-            var hospital = await _unitOfWork.Hospitals.GetByIdAsync(dto.HospitalId, cancellationToken)
-                ?? throw new NotFoundException(nameof(Hospital), dto.HospitalId);
+
+
+            await EnsureCanAccessPatientRecordAsync(dto.PatientId, cancellationToken);
+
+
+            if (doctor.Department is null)
+                throw new BusinessRuleViolationException(
+                    $"Doctor {doctor.Id} has an invalid DepartmentId ({doctor.DepartmentId}) — it doesn't match any existing Department. Fix the doctor's department assignment before retrying.");
+
+            Guid currentUserId = RequireCurrentUserId();
 
 
             var record = new MedicalRecord(
                 patient.Id,
                 doctor.Id,
-                hospital.Id,
+                doctor.Department.HospitalId,
                 dto.VisitDate,
                 dto.Diagnosis,
                 dto.Symptoms,
@@ -75,9 +84,7 @@ namespace PulseID.Application.Services
 
             if (!isPatient)
             {
-                var hasAccess = await _accessValicationService.HasAccessAsync(patientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
-                if (!hasAccess)
-                    throw new ForbiddenAccessException("You don't have an approved authorization to access this patient's medical records.");
+                await EnsureCanAccessPatientRecordAsync(patientId, cancellationToken);
             }
 
             var records = await _unitOfWork.MedicalRecords.GetByPatientAsync(patientId, cancellationToken);
@@ -133,6 +140,10 @@ namespace PulseID.Application.Services
 
             await _accessValicationService.EnsureAccessAsync(currentVersion.PatientId, doctor.UserId, AccessScope.FullMedicalRecord, cancellationToken);
 
+            if (doctor.Department is null)
+                throw new BusinessRuleViolationException(
+                    $"Doctor {doctor.Id} has an invalid DepartmentId ({doctor.DepartmentId}) — it doesn't match any existing Department. Fix the doctor's department assignment before retrying.");
+
             var newVersion = currentVersion.CreateNewVersion(doctor.Id, doctor.Department.HospitalId, dto.Diagnosis, dto.Symptoms, dto.Notes);
 
             _unitOfWork.MedicalRecords.Update(currentVersion);
@@ -142,6 +153,8 @@ namespace PulseID.Application.Services
             return ToDto(newVersion);
 
         }
+
+
 
 
 

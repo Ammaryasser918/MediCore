@@ -34,6 +34,8 @@ namespace PulseID.API.Middleware
             {
                 NotFoundException => HttpStatusCode.NotFound,
                 DuplicateEntityException => HttpStatusCode.Conflict,
+                AuthenticationRequiredException => HttpStatusCode.Unauthorized,
+                ForbiddenAccessException => HttpStatusCode.Forbidden,
                 BusinessRuleViolationException => HttpStatusCode.BadRequest,
                 ArgumentException => HttpStatusCode.BadRequest,
                 _ => HttpStatusCode.InternalServerError

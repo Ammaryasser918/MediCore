@@ -1,6 +1,5 @@
 ﻿using PulseID.Application.Common.Interfaces;
 using System.Security.Claims;
-
 namespace PulseID.API.Common
 {
     public class CurrentUserService : ICurrentUserService
@@ -16,29 +15,23 @@ namespace PulseID.API.Common
         {
             get
             {
+                var httpContext = _httpContextAccessor.HttpContext;
 
-                var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                // Prefer a real JWT claim once authentication is wired up.
+                var userIdValue = httpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? httpContext?.Request.Headers["X-User-Id"].FirstOrDefault();
 
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Guid.Parse("12345678-1234-1234-1234-1234567890ab");
-                }
-
-                return Guid.Parse(userIdClaim);
+                return Guid.TryParse(userIdValue, out var userId) ? userId : null;
             }
         }
         public string? Role
         {
             get
             {
-                var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var httpContext = _httpContextAccessor.HttpContext;
 
-                if (string.IsNullOrEmpty(roleClaim))
-                {
-                    return "Doctor";
-                }
-
-                return roleClaim;
+                return httpContext?.User?.FindFirst(ClaimTypes.Role)?.Value
+                    ?? httpContext?.Request.Headers["X-User-Role"].FirstOrDefault();
             }
         }
     }

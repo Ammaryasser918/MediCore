@@ -18,13 +18,13 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         }
 
         public async Task<IReadOnlyList<MedicalRecord>> GetByPatientAsync(Guid patientId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(m => m.PatientId == patientId).ToListAsync(cancellationToken);
+            => await _dbSet.Where(m => m.PatientId == patientId && !m.IsDeleted).ToListAsync(cancellationToken);
 
         public Task<MedicalRecord?> GetWithDetailsAsync(Guid medicalRecordId, CancellationToken cancellationToken = default)
             => _dbSet
                 .Include(m => m.MedicalFiles)
                 .Include(m => m.Prescription).ThenInclude(p => p.PrescriptionItems)
-                .FirstOrDefaultAsync(m => m.Id == medicalRecordId, cancellationToken);
+                .FirstOrDefaultAsync(m => m.Id == medicalRecordId && !m.IsDeleted, cancellationToken);
 
         public Task<MedicalRecord?> GetLatestVersionAsync(Guid rootRecordId, CancellationToken cancellationToken = default)
             => _dbSet.FirstOrDefaultAsync(m => m.RootRecordId == rootRecordId && m.Status == MedicalRecordStatus.Active
@@ -32,7 +32,7 @@ namespace PulseID.Infrastructure.Persistence.Repositories
 
 
         public async Task<IReadOnlyList<MedicalRecord>> GetByDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(m => m.DoctorId == doctorId).ToListAsync(cancellationToken);
+            => await _dbSet.Where(m => m.DoctorId == doctorId && !m.IsDeleted).ToListAsync(cancellationToken);
 
     }
 }

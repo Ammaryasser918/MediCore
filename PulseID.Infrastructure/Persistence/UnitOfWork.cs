@@ -52,7 +52,8 @@ namespace PulseID.Infrastructure.Persistence
         public IChronicDiseaseRepository ChronicDiseases => _chronicDiseases ??= new ChronicDiseaseRepository(_context);
 
 
-
+        public Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : PulseID.Domain.Common.BaseEntity
+            => _context.AddAsync(entity, cancellationToken).AsTask();
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => _context.SaveChangesAsync(cancellationToken);
 

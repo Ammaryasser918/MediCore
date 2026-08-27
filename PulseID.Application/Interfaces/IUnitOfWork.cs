@@ -1,4 +1,5 @@
 ﻿using PulseID.Application.Interfaces.Repositories;
+using PulseID.Domain.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,8 @@ namespace PulseID.Application.Interfaces
         INotificationRepository Notifications { get; }
         IAllergyRepository Allergies { get; }
         IChronicDiseaseRepository ChronicDiseases { get; }
+
+        Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : BaseEntity;
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
