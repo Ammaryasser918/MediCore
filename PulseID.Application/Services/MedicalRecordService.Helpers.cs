@@ -52,17 +52,24 @@ namespace PulseID.Application.Services
             UpdatedAt = record.UpdatedAt
         };
 
-        async Task EnsureCanAccessRecordAsync(MedicalRecord record, CancellationToken cancellationToken = default)
+        async Task EnsureCanAccessPatientRecordAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
             var currentUserId = RequireCurrentUserId();
-            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken);
+            
+            await _accessValicationService.EnsureAccessAsync(patientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+        }
 
-            if (doctor is not null)
+        async Task EnsureCanAccessRecordAsync(MedicalRecord record, CancellationToken cancellationToken)
+        {
+            var currentUserId = RequireCurrentUserId();
+
+            // The doctor who authored this record can always view it.
+            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken);
+            if (doctor is not null && doctor.Id == record.DoctorId)
                 return;
 
             await _accessValicationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
         }
-
 
         static MedicalRecordListItemDto ToListItemDto(MedicalRecord record) => new()
         {

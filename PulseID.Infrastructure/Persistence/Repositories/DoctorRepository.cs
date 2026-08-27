@@ -15,7 +15,7 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public DoctorRepository(AppDbContext context) : base(context) { }
 
         public Task<Doctor?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-            => _dbSet.FirstOrDefaultAsync(d => d.UserId == userId && !d.IsDeleted, cancellationToken);
+            => _dbSet.Include(d => d.Department).FirstOrDefaultAsync(d => d.UserId == userId && !d.IsDeleted, cancellationToken);
 
         
         public Task<Doctor?> GetBySyndicateNumberAsync(string syndicateNumber, CancellationToken cancellationToken = default)
