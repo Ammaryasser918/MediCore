@@ -31,6 +31,7 @@ namespace PulseID.API
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 
 

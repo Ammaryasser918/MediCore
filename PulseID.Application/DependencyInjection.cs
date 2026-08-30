@@ -19,6 +19,7 @@ namespace PulseID.Application
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<IAccessValidationService, AccessValidationService>();
             services.AddScoped<IMedicalFileService, MedicalFileService>();
+            
 
             return services;
         }
