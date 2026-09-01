@@ -11,6 +11,12 @@ namespace PulseID.Application.Interfaces.Repositories
     public interface IDepartmentRepository : IRepository<Department>
     {
         Task<IReadOnlyList<Department>> GetByHospitalAsync(Guid hospitalId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<Department>> GetByHospitalIncludingDeletedAsync(Guid hospitalId, CancellationToken cancellationToken = default);
+
+        Task<Department?> GetWithDoctorsAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
         Task<bool> ExistsByNameInHospitalAsync(Guid hospitalId, string name, CancellationToken cancellationToken = default);
+        
     }
 }

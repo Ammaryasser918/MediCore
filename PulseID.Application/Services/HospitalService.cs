@@ -1,6 +1,7 @@
 using PulseID.Application.Common.Exceptions;
 using PulseID.Application.DTOs.Department;
 using PulseID.Application.DTOs.Hospital;
+using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Interfaces;
 using PulseID.Domain.Entities;
@@ -25,6 +26,26 @@ public class HospitalService : IHospitalService
         HospitalId = department.HospitalId,
         CreatedAt = department.CreatedAt,
         UpdatedAt = department.UpdatedAt
+    };
+
+    static DoctorDto ToDoctorDto(Doctor doctor) => new()
+    {
+        Id = doctor.Id,
+        UserId = doctor.UserId,
+        FullName = doctor.FullName,
+        SyndicateNumber = doctor.SyndicateNumber,
+        SyndicateDocumentPath = doctor.SyndicateDocumentPath,
+        NationalId = doctor.NationalId,
+        Specialization = doctor.Specialization,
+        PhoneNumber = doctor.PhoneNumber,
+        PersonalImagePath = doctor.PersonalImagePath,
+        Status = doctor.Status,
+        DepartmentId = doctor.DepartmentId,
+        DepartmentName = doctor.Department?.Name,
+        ApprovedByHospitalAdminId = doctor.ApprovedByHospitalAdminId,
+        ApprovedAt = doctor.ApprovedAt,
+        CreatedAt = doctor.CreatedAt,
+        UpdatedAt = doctor.UpdatedAt
     };
 
     static HospitalDto ToDto(Hospital hospital) => new()
@@ -113,118 +134,130 @@ public class HospitalService : IHospitalService
 
         return ToDto(hospital);
     }
-    public async Task<HospitalDto> UpdateLicenseDocumentAsync(
-        Guid id,
-        string NewLicenseDocumentPath,
-        CancellationToken cancellationToken = default)
+
+    public async Task<IReadOnlyList<DepartmentDto>> GetDepartmentsAsync(Guid hospitalId, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
-            ?? throw new NotFoundException(nameof(Hospital), id);
+            await _unitOfWork.Hospitals.GetWithDepartmentsAsync(hospitalId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Hospital), hospitalId);
 
-        hospital.UpdateLicenseDocument(
-            NewLicenseDocumentPath);
-
-        _unitOfWork.Hospitals.Update(hospital);
-
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
-
-        return ToDto(hospital);
+        return hospital.Departments
+            .Select(ToDepartmentDto)
+            .ToList();
     }
-    public async Task DeleteAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+
+    public async Task<IReadOnlyList<DepartmentDto>> GetDepartmentsWithDetailsAsync(Guid hospitalId, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
+            await _unitOfWork.Hospitals.GetWithDepartmentsAndDoctorsAsync(hospitalId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Hospital), hospitalId);
+
+        return hospital.Departments
+            .Select(d => new DepartmentDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                HospitalId = d.HospitalId,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt,
+                Doctors = d.Doctors
+                    .Where(x => !x.IsDeleted)
+                    .Select(ToDoctorDto)
+                    .ToList()
+            })
+            .ToList();
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var hospital =
+            await _unitOfWork.Hospitals.GetWithDepartmentsAndDoctorsAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
         _unitOfWork.Hospitals.Delete(hospital);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        foreach (var department in hospital.Departments.Where(d => !d.IsDeleted))
+        {
+            _unitOfWork.Departments.Delete(department);
+            foreach (var doctor in department.Doctors.Where(d => !d.IsDeleted))
+            {
+                _unitOfWork.Doctors.Delete(doctor);
+            }
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    // Approval Work Flow
-    public async Task<HospitalDto> ApproveAsync(
-        Guid id,
-        Guid adminId,
-        CancellationToken cancellationToken = default)
+    public async Task<HospitalDto> UpdateLicenseDocumentAsync(Guid id, string NewLicenseDocumentPath, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
+            await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Hospital), id);
+
+        hospital.UpdateLicenseDocument(NewLicenseDocumentPath);
+
+        _unitOfWork.Hospitals.Update(hospital);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToDto(hospital);
+    }
+
+
+    // Approval Work Flow
+    public async Task<HospitalDto> ApproveAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
+    {
+        var hospital =
+            await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
         hospital.Approve(adminId);
 
         _unitOfWork.Hospitals.Update(hospital);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(hospital);
     }
-    public async Task<HospitalDto> RejectAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<HospitalDto> RejectAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
+            await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
         hospital.Reject();
- 
+
         _unitOfWork.Hospitals.Update(hospital);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(hospital);
     }
-    public async Task<HospitalDto> DeactivateAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<HospitalDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
+            await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
         hospital.Deactivate();
 
         _unitOfWork.Hospitals.Update(hospital);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(hospital);
     }
-    public async Task<HospitalDto> ReactivateAsync(
-        Guid id,
-        CancellationToken cancellationToken = default)
+    public async Task<HospitalDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var hospital =
-            await _unitOfWork.Hospitals.GetByIdAsync(
-                id,
-                cancellationToken)
+            await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
         hospital.Reactivate();
 
         _unitOfWork.Hospitals.Update(hospital);
 
-        await _unitOfWork.SaveChangesAsync(
-            cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToDto(hospital);
     }

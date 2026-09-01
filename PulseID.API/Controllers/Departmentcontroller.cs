@@ -26,6 +26,16 @@ public class DepartmentController : ControllerBase
         return Ok(departments);
     }
 
+    // GET: api/department/including-deleted
+    [HttpGet("including-deleted")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetAllIncludingDeleted(CancellationToken cancellationToken)
+    {
+        var departments = await _departmentService.GetAllIncludingDeletedAsync(cancellationToken);
+
+        return Ok(departments);
+    }
+
     // GET: api/department/{id}
     [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -37,10 +47,56 @@ public class DepartmentController : ControllerBase
         return Ok(department);
     }
 
-    [HttpPost("hospital/{hospitalId:guid}")]
-    public async Task<ActionResult<DepartmentDto>> CreateDepartment(Guid id, CreateDepartmentDto dto, CancellationToken cancellationToken)
+    // GET: api/department/{id}/details
+    [HttpGet("{id:guid}/details")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DepartmentDto>> GetDetails(Guid id, CancellationToken cancellationToken)
     {
-        var department = await _departmentService.CreateDepartmentAsync(id, dto, cancellationToken);
+        var department = await _departmentService.GetDetailsAsync(id, cancellationToken);
+
+        return Ok(department);
+    }
+
+    // GET: api/department/{id}/doctors
+    [HttpGet("{id:guid}/doctors")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetDoctors(Guid id, CancellationToken cancellationToken)
+    {
+        var doctors = await _departmentService.GetDoctorsAsync(id, cancellationToken);
+
+        return Ok(doctors);
+    }
+
+    // GET: api/department/hospital/{hospitalId}
+    [HttpGet("hospital/{hospitalId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetByHospital(Guid hospitalId, CancellationToken cancellationToken)
+    {
+        var departments = await _departmentService.GetByHospitalAsync(hospitalId, cancellationToken);
+
+        return Ok(departments);
+    }
+
+    // GET: api/department/hospital/{hospitalId}/including-deleted
+    [HttpGet("hospital/{hospitalId:guid}/including-deleted")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetByHospitalIncludingDeleted(Guid hospitalId, CancellationToken cancellationToken)
+    {
+        var departments = await _departmentService.GetByHospitalIncludingDeletedAsync(hospitalId, cancellationToken);
+
+        return Ok(departments);
+    }
+
+    // POST: api/department/hospital/{hospitalId}
+    [HttpPost("hospital/{hospitalId:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<DepartmentDto>> CreateDepartment(Guid hospitalId, CreateDepartmentDto dto, CancellationToken cancellationToken)
+    {
+        var department = await _departmentService.CreateDepartmentAsync(hospitalId, dto, cancellationToken);
 
         return Ok(department);
     }
@@ -57,17 +113,6 @@ public class DepartmentController : ControllerBase
         return Ok(updated);
     }
 
-    // GET: api/department/{id}/doctors
-    [HttpGet("{id:guid}/doctors")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetDoctors(Guid id, CancellationToken cancellationToken)
-    {
-        var doctors = await _departmentService.GetDoctorsAsync(id, cancellationToken);
-
-        return Ok(doctors);
-    }
-
     // POST: api/department/{id}/doctors/{doctorId}
     [HttpPost("{id:guid}/doctors/{doctorId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -75,11 +120,19 @@ public class DepartmentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<DepartmentDto>> AssignDoctorToDepartment(Guid id, Guid doctorId, CancellationToken cancellationToken)
     {
-        var updated = await _departmentService.AssignDoctorToDepartmentAsync(
-            id,
-            doctorId,
-            cancellationToken);
+        var updated = await _departmentService.AssignDoctorToDepartmentAsync(id, doctorId, cancellationToken);
 
         return Ok(updated);
+    }
+
+    // DELETE: api/department/{id}
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _departmentService.DeleteAsync(id, cancellationToken);
+
+        return NoContent();
     }
 }

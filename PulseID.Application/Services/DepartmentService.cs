@@ -48,11 +48,16 @@ public class DepartmentService : IDepartmentService
 
     public async Task<IReadOnlyList<DepartmentDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
+        var departments = await _unitOfWork.Departments.GetAllActiveAsync(cancellationToken);
+
+        return departments.Select(ToDto).ToList();
+    }
+
+    public async Task<IReadOnlyList<DepartmentDto>> GetAllIncludingDeletedAsync(CancellationToken cancellationToken = default)
+    {
         var departments = await _unitOfWork.Departments.GetAllAsync(cancellationToken);
 
-        return departments
-            .Select(ToDto)
-            .ToList();
+        return departments.Select(ToDto).ToList();
     }
 
     public async Task<DepartmentDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -63,8 +68,30 @@ public class DepartmentService : IDepartmentService
         return ToDto(department);
     }
 
+    public async Task<IReadOnlyList<DepartmentDto>> GetByHospitalAsync(Guid hospitalId, CancellationToken cancellationToken = default)
+    {
+        var departments = await _unitOfWork.Departments.GetByHospitalAsync(hospitalId, cancellationToken);
+
+        return departments.Select(ToDto).ToList();
+    }
+
+    public async Task<IReadOnlyList<DepartmentDto>> GetByHospitalIncludingDeletedAsync(Guid hospitalId, CancellationToken cancellationToken = default)
+    {
+        var departments = await _unitOfWork.Departments.GetByHospitalIncludingDeletedAsync(hospitalId, cancellationToken);
+
+        return departments.Select(ToDto).ToList();
+    }
+
     public async Task<DepartmentDto> CreateDepartmentAsync(Guid hospitalId, CreateDepartmentDto dto, CancellationToken cancellationToken = default)
     {
+        var hospital = await _unitOfWork.Hospitals.GetByIdAsync(hospitalId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Hospital), hospitalId);
+
+        var exists = await _unitOfWork.Departments.ExistsByNameInHospitalAsync(hospitalId, dto.Name, cancellationToken);
+
+        if (exists)
+            throw new Exception($"Department '{dto.Name}' already exists in this hospital.");
+
         var department = new Department(dto.Name, hospitalId, dto.Description);
 
         await _unitOfWork.Departments.AddAsync(department, cancellationToken);
@@ -79,9 +106,7 @@ public class DepartmentService : IDepartmentService
         var department = await _unitOfWork.Departments.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Department), id);
 
-        department.EditDepartment(
-            dto.Name,
-            dto.Description);
+        department.EditDepartment(dto.Name, dto.Description);
 
         _unitOfWork.Departments.Update(department);
 
@@ -90,18 +115,31 @@ public class DepartmentService : IDepartmentService
         return ToDto(department);
     }
 
+    public async Task<DepartmentDto> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var department = await _unitOfWork.Departments.GetWithDoctorsAsync(id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Department), id);
+
+        return new DepartmentDto
+        {
+            Id = department.Id,
+            Name = department.Name,
+            Description = department.Description,
+            HospitalId = department.HospitalId,
+            CreatedAt = department.CreatedAt,
+            UpdatedAt = department.UpdatedAt,
+            Doctors = department.Doctors.Where(d => !d.IsDeleted).Select(ToDoctorDto).ToList()
+        };
+    }
+
     public async Task<IReadOnlyList<DoctorDto>> GetDoctorsAsync(Guid departmentId, CancellationToken cancellationToken = default)
     {
         var department = await _unitOfWork.Departments.GetByIdAsync(departmentId, cancellationToken)
             ?? throw new NotFoundException(nameof(Department), departmentId);
 
-        var doctors = await _unitOfWork.Doctors.GetByDepartmentAsync(
-            departmentId,
-            cancellationToken);
+        var doctors = await _unitOfWork.Doctors.GetByDepartmentAsync(departmentId, cancellationToken);
 
-        return doctors
-            .Select(ToDoctorDto)
-            .ToList();
+        return doctors.Select(ToDoctorDto).ToList();
     }
 
     public async Task<DepartmentDto> AssignDoctorToDepartmentAsync(Guid departmentId, Guid doctorId, CancellationToken cancellationToken = default)
@@ -121,4 +159,18 @@ public class DepartmentService : IDepartmentService
         return ToDto(department);
     }
 
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var department = await _unitOfWork.Departments.GetWithDoctorsAsync(id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Department), id);
+
+        _unitOfWork.Departments.Delete(department);
+
+        foreach (var doctor in department.Doctors.Where(d => !d.IsDeleted))
+        {
+            _unitOfWork.Doctors.Delete(doctor);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
 }

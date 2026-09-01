@@ -23,8 +23,7 @@ public class HospitalController : ControllerBase
     // GET: api/hospital
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<HospitalDto>>> GetAll(
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<HospitalDto>>> GetAll(CancellationToken cancellationToken)
     {
         var hospitals =
             await _hospitalService.GetAllAsync(cancellationToken);
@@ -37,14 +36,10 @@ public class HospitalController : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> GetById(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var hospital =
-            await _hospitalService.GetByIdAsync(
-                id,
-                cancellationToken);
+            await _hospitalService.GetByIdAsync(id, cancellationToken);
 
         return Ok(hospital);
     }
@@ -54,19 +49,12 @@ public class HospitalController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<HospitalDto>> Create(
-        [FromBody] CreateHospitalDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Create([FromBody] CreateHospitalDto dto, CancellationToken cancellationToken)
     {
         var created =
-            await _hospitalService.CreateAsync(
-                dto,
-                cancellationToken);
+            await _hospitalService.CreateAsync(dto, cancellationToken);
 
-        return CreatedAtAction(
-            nameof(GetById),
-            new { id = created.Id },
-            created);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
 
@@ -75,16 +63,10 @@ public class HospitalController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<HospitalDto>> Update(
-        Guid id,
-        [FromBody] UpdateHospitalDto dto,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Update(Guid id, [FromBody] UpdateHospitalDto dto, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.UpdateAsync(
-                id,
-                dto,
-                cancellationToken);
+            await _hospitalService.UpdateAsync(id, dto, cancellationToken);
 
         return Ok(updated);
     }
@@ -95,16 +77,10 @@ public class HospitalController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<HospitalDto>> UpdateLicenseDocument(
-        Guid id,
-        [FromBody] string NewLicenseDocumentPath,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> UpdateLicenseDocument(Guid id, [FromBody] string NewLicenseDocumentPath, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.UpdateLicenseDocumentAsync(
-                id,
-                NewLicenseDocumentPath,
-                cancellationToken);
+            await _hospitalService.UpdateLicenseDocumentAsync(id, NewLicenseDocumentPath, cancellationToken);
 
         return Ok(updated);
     }
@@ -114,13 +90,9 @@ public class HospitalController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
-        await _hospitalService.DeleteAsync(
-            id,
-            cancellationToken);
+        await _hospitalService.DeleteAsync(id, cancellationToken);
 
         return NoContent();
     }
@@ -129,18 +101,33 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> Approve(
-        Guid id,
-        [FromQuery] Guid adminId,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Approve(Guid id, [FromQuery] Guid adminId, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.ApproveAsync(
-                id,
-                adminId,
-                cancellationToken);
-
+            await _hospitalService.ApproveAsync(id, adminId, cancellationToken);
         return Ok(updated);
+    }
+
+    [HttpGet("{id:guid}/departments")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetDepartments(Guid id, CancellationToken cancellationToken)
+    {
+        var departments =
+            await _hospitalService.GetDepartmentsAsync(id, cancellationToken);
+
+        return Ok(departments);
+    }
+
+    [HttpGet("{id:guid}/departments/details")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetDepartmentsWithDetails(Guid id, CancellationToken cancellationToken)
+    {
+        var departments =
+            await _hospitalService.GetDepartmentsWithDetailsAsync(id, cancellationToken);
+
+        return Ok(departments);
     }
 
 
@@ -148,14 +135,10 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/reject")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> Reject(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Reject(Guid id, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.RejectAsync(
-                id,
-                cancellationToken);
+            await _hospitalService.RejectAsync(id, cancellationToken);
 
         return Ok(updated);
     }
@@ -165,14 +148,10 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/deactivate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> Deactivate(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.DeactivateAsync(
-                id,
-                cancellationToken);
+            await _hospitalService.DeactivateAsync(id, cancellationToken);
 
         return Ok(updated);
     }
@@ -182,14 +161,10 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/reactivate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> Reactivate(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<HospitalDto>> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var updated =
-            await _hospitalService.ReactivateAsync(
-                id,
-                cancellationToken);
+            await _hospitalService.ReactivateAsync(id, cancellationToken);
 
         return Ok(updated);
     }

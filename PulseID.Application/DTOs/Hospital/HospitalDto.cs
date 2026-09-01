@@ -23,7 +23,6 @@ public class HospitalDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
-    public IReadOnlyList<DepartmentDto> Departments { get; set; }
-        = new List<DepartmentDto>();
+    public IReadOnlyList<DepartmentDto> Departments { get; set; } = new List<DepartmentDto>();
 }
 
