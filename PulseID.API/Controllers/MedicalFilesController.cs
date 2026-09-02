@@ -115,7 +115,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task DeleteFileAsync(Guid medicalRecordId, Guid fileId, CancellationToken cancellationToken)
+        public async Task<IActionResult> DeleteFileAsync(Guid medicalRecordId, Guid fileId, CancellationToken cancellationToken)
         {
             await _medicalFileService.DeleteFileAsync(medicalRecordId, fileId, cancellationToken);
             return NoContent();
