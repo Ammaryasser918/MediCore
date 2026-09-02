@@ -1,0 +1,153 @@
+﻿using PulseID.Application.Common.Exceptions;
+using PulseID.Application.Common.Interfaces;
+using PulseID.Application.DTOs.Auth;
+using PulseID.Application.Interfaces;
+using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Entities;
+using Microsoft.Extensions.Caching.Memory;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace PulseID.Application.Services
+{
+    public class AuthService : IAuthService
+    {
+        readonly IOtpApiClient _otpClient;
+        readonly IIdentityService _identityService;
+        readonly IUnitOfWork _unitOfWork;
+        readonly IJwtTokenService _jwtTokenService;
+        readonly IMemoryCache _cache;
+
+        public AuthService(IOtpApiClient otpApiClient, IIdentityService identityService, IUnitOfWork unitOfWork, IJwtTokenService jwtTokenService, IMemoryCache cache)
+        {
+            _otpClient = otpApiClient;
+            _identityService = identityService;
+            _unitOfWork = unitOfWork;
+            _jwtTokenService = jwtTokenService;
+            _cache = cache;
+        }
+
+
+        // ============== < Registration Section> ===================
+
+        public async Task<OtpApiResult> RequestPatientRegistrationOtpAsync(RegisterPatientDto dto, CancellationToken cancellationToken = default)
+        {
+            const string genericMessage = "If this email is available an OTP has been sent.";
+
+            if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            if (await _unitOfWork.Patients.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
+
+            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            var cacheKey = $"PendingReg_{dto.Email}";
+            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
+
+            result.Message ??= genericMessage;
+            return result;
+
+            
+        }
+
+
+        public async Task<AuthResultDto> VerifyPatientRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        {
+
+            var cacheKey = $"PendingReg_{email}";
+            if (!_cache.TryGetValue(cacheKey, out RegisterPatientDto? dto) || dto is null)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+            }
+
+
+            var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+
+
+
+            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+
+            if (!created || userId is null)
+                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+
+            var patient = new Patient(
+                userId.Value,
+                dto.NationalId, 
+                dto.FullName,
+                dto.DateOfBirth,
+                dto.Gender,
+                dto.PhoneNumber
+                );
+
+            await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var token = _jwtTokenService.GenerateToken(userId.Value, "Patient");
+            return new AuthResultDto { Success = true, Token = token };
+        }
+
+
+        // ========================== < Login Section> =============================
+
+        public async Task<OtpApiResult> RequestLoginOtpAsync(string email, string password, CancellationToken cancellationToken = default)
+        {
+            const string genericMessage = "If the credentials are valid, an OTP has been sent.";
+
+            if (!await _identityService.CheckPasswordAsync(email, password, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            var result = await _otpClient.RequestOtpAsync(email, cancellationToken);
+            result.Message ??= genericMessage;
+            return result;
+
+        }
+
+        public async Task<AuthResultDto> VerifyLoginAsync(string email, string otp, CancellationToken cancellationToken = default)
+        {
+            var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+
+            var userId = await _identityService.FindUserIdByEmailAsync(email, cancellationToken);
+            if (userId is null)
+            {
+                return new AuthResultDto { Success = false, Error = "Account not found." };
+            }
+
+            var role = await DetermineRoleAsync(userId.Value, cancellationToken);
+            var token = _jwtTokenService.GenerateToken(userId.Value, role);
+            return new AuthResultDto { Success = true, Token = token };
+
+        }
+
+
+
+
+
+        // A helper method to get the role of the User
+        async Task<string> DetermineRoleAsync(Guid userId, CancellationToken cancellationToken)
+        {
+            if (await _unitOfWork.Patients.GetByUserIdAsync(userId, cancellationToken) is not null)
+                return "Patient";
+
+            if (await _unitOfWork.Doctors.GetByUserIdAsync(userId, cancellationToken) is not null)
+                return "Doctor";
+
+            if (await _unitOfWork.Pharmacists.GetByUserIdAsync(userId, cancellationToken) is not null)
+                return "Pharmacists";
+
+            return "Unknown";
+
+        }
+
+    }
+}

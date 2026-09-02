@@ -7,6 +7,7 @@ using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
 using PulseID.Infrastructure;
 using PulseID.Infrastructure.Persistence;
+using PulseID.Otp;
 
 namespace PulseID.API
 {
@@ -32,6 +33,7 @@ namespace PulseID.API
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            builder.Services.AddMemoryCache();
 
 
 
