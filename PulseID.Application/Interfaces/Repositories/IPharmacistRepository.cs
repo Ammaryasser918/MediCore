@@ -15,5 +15,6 @@ namespace PulseID.Application.Interfaces.Repositories
         Task<Pharmacist?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
         Task<Pharmacist?> GetBySyndicateNumberAsync(string syndicateNumber, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<Pharmacist>> GetByStatusAsync(PharmacistStatus status, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<Pharmacist>> GetByPharmacyIdAsync(Guid pharmacyId, CancellationToken cancellationToken = default);
     }
 }
