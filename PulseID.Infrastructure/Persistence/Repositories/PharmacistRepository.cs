@@ -27,6 +27,8 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<Pharmacist>> GetByStatusAsync(PharmacistStatus status, CancellationToken cancellationToken = default)
             => await _dbSet.Where(ph => ph.Status == status).ToListAsync(cancellationToken);
 
+        public async Task<IReadOnlyList<Pharmacist>> GetByPharmacyIdAsync(Guid pharmacyId, CancellationToken cancellationToken = default)
+            => await _dbSet.Where(p => p.PharmacyId == pharmacyId && !p.IsDeleted).ToListAsync(cancellationToken);
 
     }
 }
