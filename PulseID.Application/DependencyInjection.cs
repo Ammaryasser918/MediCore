@@ -20,7 +20,10 @@ namespace PulseID.Application
             services.AddScoped<IAccessValidationService, AccessValidationService>();
             services.AddScoped<IMedicalFileService, MedicalFileService>();
             services.AddScoped<IPharmacyService, PharmacyService>();
-            
+            services.AddScoped<IAllergyService, AllergyService>();
+            services.AddScoped<IChronicDiseaseService, ChronicDiseaseService>();
+            services.AddScoped<IPatientMedicalConditionService, PatientMedicalConditionService>();
+
 
             return services;
         }
