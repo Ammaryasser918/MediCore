@@ -40,7 +40,7 @@ namespace PulseID.Otp
         public string NationalId { get; set; } = string.Empty;
 
         [JsonPropertyName("gender")]
-        public Gender Gender { get; set; }
+        public Gender? Gender { get; set; }
     }
 
     // ---------- Responses ----------

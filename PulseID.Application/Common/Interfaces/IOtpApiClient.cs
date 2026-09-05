@@ -10,8 +10,10 @@ namespace PulseID.Application.Common.Interfaces
     public interface IOtpApiClient
     {
         Task<OtpApiResult> RegisterAsync(RegisterPatientDto dto, CancellationToken cancellationToken = default);
+        Task<OtpApiResult> RegisterAsync(RegisterDoctorDto dto, CancellationToken cancellationToken = default);
         Task<OtpApiResult> RequestOtpAsync(string email, CancellationToken cancellationToken = default);
         Task<OtpVerificationResult> VerifyOtpAsync(string email, string Otp, CancellationToken cancellationToken = default);
+        Task<bool> RollbackRegistrationAsync(string email, CancellationToken cancellationToken = default);
     }
 
     public class OtpApiResult

@@ -24,6 +24,9 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public Task<Doctor?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
             => _dbSet.FirstOrDefaultAsync(d => d.NationalId == nationalId && !d.IsDeleted, cancellationToken);
 
+        public Task<bool> ExistsByNationalIdAsync(string nationalid, CancellationToken cancellationToken = default)
+            => _dbSet.AnyAsync(d => d.NationalId == nationalid && !d.IsDeleted, cancellationToken);
+
         public async Task<IReadOnlyList<Doctor>> GetByDepartmentAsync(Guid departmentId, CancellationToken cancellationToken = default)
             => await _dbSet.Where(d => d.DepartmentId == departmentId).ToListAsync(cancellationToken);
 

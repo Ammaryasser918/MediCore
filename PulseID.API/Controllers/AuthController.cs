@@ -20,6 +20,9 @@ namespace PulseID.API.Controllers
             _authService = authService;
         }
 
+
+        // ------- Patient Registration --------
+
         // POST: api/auth/patient/register/request-otp
         [HttpPost("patient/register/request-otp")]
         public async Task<IActionResult> RequestPatientRegisterationOtp([FromBody] RegisterPatientDto dto, CancellationToken cancellationToken)
@@ -38,6 +41,32 @@ namespace PulseID.API.Controllers
             return Ok(new { token = result.Token });
         }
 
+
+
+        // ------ Doctor Registration --------
+
+        // POST: api/auth/doctor/register/request-otp
+        [HttpPost("doctor/register/request-otp")]
+        public async Task<IActionResult> RequestDoctorRegisterationOtp([FromBody] RegisterDoctorDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _authService.RequestDoctorRegistrationOtpAsync(dto, cancellationToken);
+            return Ok(new { message = result.Message });
+        }
+
+
+        // POST: api/auth/doctor/register/verify
+        [HttpPost("doctor/register/verify")]
+        public async Task<IActionResult> VerifyDoctorRegisteration([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _authService.VerifyDoctorRegistrationAsync(request.Email, request.Otp, cancellationToken);
+            if (!result.Success)
+                return BadRequest(new { message = result.Error });
+            return Ok(new { token = result.Token });
+        }
+
+
+
+        // ------  Common  --------
 
         // POST: api/auth/login/request-otp
         [HttpPost("login/request-otp")]

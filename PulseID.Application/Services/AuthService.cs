@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace PulseID.Application.Services
 {
@@ -31,7 +32,7 @@ namespace PulseID.Application.Services
         }
 
 
-        // ============== < Registration Section> ===================
+        // ============== < Patient Registration Section> ===================
 
         public async Task<OtpApiResult> RequestPatientRegistrationOtpAsync(RegisterPatientDto dto, CancellationToken cancellationToken = default)
         {
@@ -48,7 +49,7 @@ namespace PulseID.Application.Services
                 return registrationResult;
 
             var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
-            var cacheKey = $"PendingReg_{dto.Email}";
+            var cacheKey = $"PendingReg_Patient_{dto.Email}";
             _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
 
             result.Message ??= genericMessage;
@@ -61,40 +62,122 @@ namespace PulseID.Application.Services
         public async Task<AuthResultDto> VerifyPatientRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
         {
 
-            var cacheKey = $"PendingReg_{email}";
+            var cacheKey = $"PendingReg_Patient_{email}";
             if (!_cache.TryGetValue(cacheKey, out RegisterPatientDto? dto) || dto is null)
             {
                 return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
             }
 
 
-            var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-            if (!verification.Success)
-                return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+            try
+            {
+                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                if (!verification.Success)
+                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
 
 
-            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
 
-            if (!created || userId is null)
-                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                if (!created || userId is null)
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
 
-            var patient = new Patient(
-                userId.Value,
-                dto.NationalId, 
-                dto.FullName,
-                dto.DateOfBirth,
-                dto.Gender,
-                dto.PhoneNumber
-                );
+                var patient = new Patient(
+                    userId.Value,
+                    dto.NationalId,
+                    dto.FullName,
+                    dto.DateOfBirth,
+                    dto.Gender,
+                    dto.PhoneNumber
+                    );
 
-            await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            var token = _jwtTokenService.GenerateToken(userId.Value, "Patient");
-            return new AuthResultDto { Success = true, Token = token };
+                await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                _cache.Remove(cacheKey);
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Patient");
+                return new AuthResultDto { Success = true, Token = token };
+            }
+            catch (Exception ex)
+            {
+                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
+            }
         }
 
+
+        // ========================== < Doctor Registration Section> =============================
+
+        public async Task<OtpApiResult> RequestDoctorRegistrationOtpAsync(RegisterDoctorDto dto, CancellationToken cancellationToken = default)
+        {
+            const string genericMessage = "If this email is available an OTP has been sent.";
+
+            if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            if (await _unitOfWork.Doctors.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
+
+            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            var cacheKey = $"PendingReg_Doctor_{dto.Email}";
+            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
+
+            result.Message ??= genericMessage;
+            return result;
+        }
+
+        public async Task<AuthResultDto> VerifyDoctorRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"PendingReg_Doctor_{email}";
+            if (!_cache.TryGetValue(cacheKey, out RegisterDoctorDto? dto) || dto is null)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+            }
+
+            try
+            {
+                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                if (!verification.Success)
+                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+
+                if (!created || userId is null)
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+
+                var doctor = new Doctor(
+                    userId.Value,
+                    dto.FullName,
+                    dto.SyndicateNumber,
+                    dto.SyndicateDocumentPath,
+                    dto.NationalId,
+                    dto.Specialization,
+                    dto.PhoneNumber,
+                    dto.DepartmentId,
+                    dto.PersonalImagePath
+                    );
+
+
+                await _unitOfWork.Doctors.AddAsync(doctor, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                _cache.Remove(cacheKey);
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Doctor");
+                return new AuthResultDto { Success = true, Token = token };
+
+            }
+            catch (Exception ex)
+            {
+                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
+            }
+        }
+
+
+
+        // Common
 
         // ========================== < Login Section> =============================
 
