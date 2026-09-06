@@ -35,6 +35,14 @@ namespace PulseID.Otp
             var wire = await ReadOrDefaultAsync<GenericMessageResponse>(response, cancellationToken);
             return new OtpApiResult { Success = response.IsSuccessStatusCode, Message = wire.Message ?? wire.Error };
         }
+        
+        public async Task<OtpApiResult> RegisterAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default)
+        {
+            var body = new RegisterRequest { Email = dto.Email, Password = dto.Password, Phone = dto.PhoneNumber, Name = dto.FullName, NationalId = dto.NationalId };
+            var response = await _http.PostAsJsonAsync("/api/auth/register", body, cancellationToken);
+            var wire = await ReadOrDefaultAsync<GenericMessageResponse>(response, cancellationToken);
+            return new OtpApiResult { Success = response.IsSuccessStatusCode, Message = wire.Message ?? wire.Error };
+        }
 
         public async Task<OtpApiResult> RequestOtpAsync(string email, CancellationToken cancellationToken = default)
         {

@@ -177,6 +177,80 @@ namespace PulseID.Application.Services
 
 
 
+
+        // ========================== < Pharmacist Registration Section> =============================
+
+        public async Task<OtpApiResult> RequestPharmacistRegistrationOtpAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default)
+        {
+            const string genericMessage = "If this email is available an OTP has been sent.";
+            if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            if (await _unitOfWork.Pharmacists.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
+            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
+
+            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+
+            var cacheKey = $"PendingReg_Pharmacist_{dto.Email}";
+            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
+
+            result.Message ??= genericMessage;
+            return result;
+        }
+
+        public async Task<AuthResultDto> VerifyPharmacistRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"PendingReg_Pharmacist_{email}";
+            if (!_cache.TryGetValue(cacheKey, out RegisterPharmacistDto? dto) || dto is null)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+            }
+
+            try
+            {
+                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                if (!verification.Success)
+                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+
+                if (!created || userId is null)
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+
+                var pharmacist = new Pharmacist(
+                    userId.Value,
+                    dto.FullName,
+                    dto.SyndicateNumber,
+                    dto.SyndicateDocumentPath,
+                    dto.NationalId,
+                    dto.PhoneNumber,
+                    dto.PharmacyId
+                    );
+
+
+                await _unitOfWork.Pharmacists.AddAsync(pharmacist, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                _cache.Remove(cacheKey);
+
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Pharmacist");
+                return new AuthResultDto { Success = true, Token = token };
+
+            }
+            catch(Exception ex)
+            {
+                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
+            }
+
+
+
+        }
+
         // Common
 
         // ========================== < Login Section> =============================

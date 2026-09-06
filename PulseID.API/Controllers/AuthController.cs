@@ -65,6 +65,26 @@ namespace PulseID.API.Controllers
         }
 
 
+        // ------ Pharmacist Registration --------
+
+        // POST: api/auth/pharmacist/register/request-otp
+        [HttpPost("pharmacist/register/request-otp")]
+        public async Task<IActionResult> RequestPharmacistRegisterationOtp([FromBody] RegisterPharmacistDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _authService.RequestPharmacistRegistrationOtpAsync(dto, cancellationToken);
+            return Ok(new { message = result.Message });
+        }
+
+        // POST: api/auth/pharmacist/register/verify
+        [HttpPost("pharmacist/register/verify")]
+        public async Task<IActionResult> VerifyPharmacistRegisteration([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _authService.VerifyPharmacistRegistrationAsync(request.Email, request.Otp, cancellationToken);
+            if (!result.Success)
+                return BadRequest(new { message = result.Error });
+            return Ok(new { token = result.Token });
+        }
+
 
         // ------  Common  --------
 
