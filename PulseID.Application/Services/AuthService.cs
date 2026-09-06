@@ -80,7 +80,10 @@ namespace PulseID.Application.Services
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
 
                 if (!created || userId is null)
+                {
+                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var patient = new Patient(
                     userId.Value,
@@ -146,7 +149,10 @@ namespace PulseID.Application.Services
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
 
                 if (!created || userId is null)
+                {
+                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var doctor = new Doctor(
                     userId.Value,
@@ -219,7 +225,10 @@ namespace PulseID.Application.Services
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
 
                 if (!created || userId is null)
+                {
+                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var pharmacist = new Pharmacist(
                     userId.Value,
@@ -300,7 +309,7 @@ namespace PulseID.Application.Services
                 return "Doctor";
 
             if (await _unitOfWork.Pharmacists.GetByUserIdAsync(userId, cancellationToken) is not null)
-                return "Pharmacists";
+                return "Pharmacist";
 
             return "Unknown";
 
