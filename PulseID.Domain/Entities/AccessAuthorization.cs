@@ -16,6 +16,8 @@ namespace PulseID.Domain.Entities
         public Patient Patient { get; private set; } = default!;
         public Guid GranteeUserId { get; private set; } = default!;
         public string GranteeRole { get; private set; } = default!;
+        public string Purpose { get; private set; }
+        public int RequestedDurationMinutes { get; private set; }
 
         public AccessScope Scope { get; private set; }
         public AuthorizationStatus Status { get; private set; } = AuthorizationStatus.Pending;
@@ -28,7 +30,8 @@ namespace PulseID.Domain.Entities
 
         AccessAuthorization() { }
 
-        public AccessAuthorization(Guid patientId, Guid granteeUserId, string granteeRole, AccessScope scope, DateTime? expiresAt)
+        public AccessAuthorization(Guid patientId, Guid granteeUserId, string granteeRole, AccessScope scope,
+            string purpose, int requestedDurationMinutes)
         {
             if (patientId == Guid.Empty)
                 throw new ArgumentException("Patient Id is required", nameof(patientId));
@@ -36,12 +39,17 @@ namespace PulseID.Domain.Entities
                 throw new ArgumentException("Grantee User Id is required", nameof(granteeUserId));
             if (string.IsNullOrWhiteSpace(granteeRole))
                 throw new ArgumentException("Grantee Role is required", nameof(granteeRole));
+            if (string.IsNullOrWhiteSpace(purpose))
+                throw new ArgumentException("Purpuse is required", nameof(purpose));
+            if (requestedDurationMinutes <= 0)
+                throw new ArgumentException("Requested duration must be greater than zero", nameof(requestedDurationMinutes));
 
             PatientId = patientId;
             GranteeUserId = granteeUserId;
             GranteeRole = granteeRole;
             Scope = scope;
-            ExpiresAt = expiresAt;
+            Purpose = purpose;
+            RequestedDurationMinutes = requestedDurationMinutes;
         }
 
         public void Approve()
@@ -50,6 +58,7 @@ namespace PulseID.Domain.Entities
                 throw new BusinessRuleViolationException("Can only approve access in pending case");
             Status = AuthorizationStatus.Approved;
             RespondedAt = DateTime.UtcNow;
+            ExpiresAt = RespondedAt.Value.AddMinutes(RequestedDurationMinutes);
             MarkAsUpdated();
         }
 

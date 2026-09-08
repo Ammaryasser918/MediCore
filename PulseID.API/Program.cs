@@ -121,7 +121,7 @@ namespace PulseID.API
             app.UseHttpsRedirection();
 
             app.UseCors("PulseIDApiCorsPolicy");
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();

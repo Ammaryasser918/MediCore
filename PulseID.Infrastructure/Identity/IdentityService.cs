@@ -59,5 +59,11 @@ namespace PulseID.Infrastructure.Identity
             return user?.Id;
         }
 
+        public async Task<string?> GetEmailByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            return user?.Email;
+        }
+
     }
 }

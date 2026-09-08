@@ -178,12 +178,19 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("RequestedDurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("RespondedAt")
                         .HasColumnType("datetime2");
