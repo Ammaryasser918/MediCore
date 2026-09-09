@@ -77,7 +77,7 @@ namespace PulseID.Application.Services
 
 
 
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
 
                 if (!created || userId is null)
                 {
@@ -97,7 +97,7 @@ namespace PulseID.Application.Services
                 await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 _cache.Remove(cacheKey);
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Patient");
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Patient", email);
                 return new AuthResultDto { Success = true, Token = token };
             }
             catch (Exception ex)
@@ -146,7 +146,7 @@ namespace PulseID.Application.Services
                 if (!verification.Success)
                     return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
 
                 if (!created || userId is null)
                 {
@@ -170,7 +170,7 @@ namespace PulseID.Application.Services
                 await _unitOfWork.Doctors.AddAsync(doctor, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 _cache.Remove(cacheKey);
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Doctor");
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Doctor", email);
                 return new AuthResultDto { Success = true, Token = token };
 
             }
@@ -222,7 +222,7 @@ namespace PulseID.Application.Services
                 if (!verification.Success)
                     return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, cancellationToken);
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
 
                 if (!created || userId is null)
                 {
@@ -246,7 +246,7 @@ namespace PulseID.Application.Services
 
                 _cache.Remove(cacheKey);
 
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Pharmacist");
+                var token = _jwtTokenService.GenerateToken(userId.Value, "Pharmacist", email);
                 return new AuthResultDto { Success = true, Token = token };
 
             }
@@ -289,8 +289,14 @@ namespace PulseID.Application.Services
                 return new AuthResultDto { Success = false, Error = "Account not found." };
             }
 
-            var role = await DetermineRoleAsync(userId.Value, cancellationToken);
-            var token = _jwtTokenService.GenerateToken(userId.Value, role);
+            var role = await _identityService.GetUserRoleAsync(userId.Value, cancellationToken);
+
+            if (string.IsNullOrEmpty(role))
+            {
+                return new AuthResultDto { Success = false, Error = "User has no assigned role." };
+            }
+
+            var token = _jwtTokenService.GenerateToken(userId.Value, role, email);
             return new AuthResultDto { Success = true, Token = token };
 
         }

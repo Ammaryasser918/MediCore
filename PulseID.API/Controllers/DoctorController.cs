@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.Interfaces.IServices;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class DoctorController : ControllerBase
@@ -17,7 +20,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // GET: api/doctors
+        // GET: api/doctor
+        [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetAll(CancellationToken cancellationToken)
@@ -26,7 +30,8 @@ namespace PulseID.API.Controllers
             return Ok(doctors);
         }
 
-        // GET: api/doctors/{id}
+        // GET: api/doctor/{id}
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -36,7 +41,8 @@ namespace PulseID.API.Controllers
             return Ok(doctor);
         }
 
-        // GET: api/doctors/by-department/{departmentId}
+        // GET: api/doctor/by-department/{departmentId}
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpGet("by-department/{departmentId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetByDepartment(Guid departmentId, CancellationToken cancellationToken)
@@ -46,7 +52,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // POST: api/doctors
+        // POST: api/doctor
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -57,7 +64,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // PUT: api/doctors/{id}/department
+        // PUT: api/doctor/{id}/department
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPut("{id:guid}/department")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,7 +75,8 @@ namespace PulseID.API.Controllers
             return Ok(updated);
         }
 
-        // PUT: api/doctors/{id}
+        // PUT: api/doctor/{id}
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -79,7 +88,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // DELETE: api/doctors/{id}
+        // DELETE: api/doctor/{id}
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -89,19 +99,25 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
-        // PATCH: api/doctors/{id}/approve?hospitalAdminId=...
+        // PATCH: api/doctor/{id}/approve?hospitalAdminId=...
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPatch("{id:guid}/approve")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<DoctorDto>> Approve(Guid id, [FromQuery] Guid hospitalAdminId, CancellationToken cancellationToken)
+        public async Task<ActionResult<DoctorDto>> Approve(Guid id, CancellationToken cancellationToken)
         {
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var hospitalAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
             var updated = await _doctorService.ApproveAsync(id, hospitalAdminId, cancellationToken);
             return Ok(updated);
         }
 
 
 
-        // PATCH: api/doctors/{id}/reject
+        // PATCH: api/doctor/{id}/reject
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPatch("{id:guid}/reject")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -112,7 +128,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // PATCH: api/doctors/{id}/deactivate
+        // PATCH: api/doctor/{id}/deactivate
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPatch("{id:guid}/deactivate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -123,7 +140,8 @@ namespace PulseID.API.Controllers
         }
 
 
-        // PATCH: api/doctors/{id}/reactivate
+        // PATCH: api/doctor/{id}/reactivate
+        [Authorize(Roles = "HospitalAdmin")]
         [HttpPatch("{id:guid}/reactivate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

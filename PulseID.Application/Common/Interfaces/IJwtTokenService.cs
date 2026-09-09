@@ -9,6 +9,6 @@ namespace PulseID.Application.Common.Interfaces
     public interface IJwtTokenService
     {
         // Signed JWT carrying the given UserId and role as claims
-        string GenerateToken(Guid userId, string role);
+        string GenerateToken(Guid userId, string role, string email);
     }
 }

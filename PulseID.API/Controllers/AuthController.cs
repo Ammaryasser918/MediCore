@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using PulseID.Application.DTOs.Auth;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Otp;
 using System.Diagnostics.Contracts;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers
 {
@@ -108,6 +110,28 @@ namespace PulseID.API.Controllers
             return Ok(new { token = result.Token });
         }
 
+        [Authorize]
+        [HttpPost("Logout")]
+        public IActionResult Logout()
+        {
+            return Ok(new { message = "Logged out successfully." });
+        }
+
+        [Authorize]
+        [HttpGet("session")]
+        public IActionResult GetSession()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            return Ok(new
+            {
+                isAuthenticated = true,
+                user = new { id = userId, email, role }
+            });
+
+        }
 
 
 

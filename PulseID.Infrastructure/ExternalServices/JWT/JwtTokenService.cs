@@ -19,13 +19,14 @@ namespace PulseID.Infrastructure.ExternalServices.JWT
             _options = options.Value;
         }
 
-        public string GenerateToken(Guid userId, string role)
+        public string GenerateToken(Guid userId, string role, string email)
         {
             var claims = new List<Claim>
             {
                 new (ClaimTypes.NameIdentifier, userId.ToString()),
                 new (ClaimTypes.Role, role),
-                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new (ClaimTypes.Email, email)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));

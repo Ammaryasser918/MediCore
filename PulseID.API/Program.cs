@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -6,11 +5,8 @@ using PulseID.API.Common;
 using PulseID.API.Middleware;
 using PulseID.Application;
 using PulseID.Application.Common.Interfaces;
-using PulseID.Domain.Entities;
-using PulseID.Domain.Enums;
 using PulseID.Infrastructure;
-using PulseID.Infrastructure.Persistence;
-using PulseID.Otp;
+using System.Security.Claims;
 using System.Text;
 
 namespace PulseID.API
@@ -21,9 +17,14 @@ namespace PulseID.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
 
             builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.AddApplication();
+
+            builder.Services.AddInfrastructure(builder.Configuration);
+
 
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var secretKey = jwtSettings["Secret"] ?? builder.Configuration["Jwt:Secret"];
@@ -32,9 +33,13 @@ namespace PulseID.API
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options =>
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
             {
-                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
@@ -42,32 +47,29 @@ namespace PulseID.API
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!)),
+                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = ClaimTypes.NameIdentifier
                 };
             });
 
-            builder.Services.AddEndpointsApiExplorer();
-
-                
-
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
+            
             builder.Services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "PulseID API", Version = "v1" });
-                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "PulseID API", Version = "v1" });
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Type = SecuritySchemeType.Http,
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+                    In = ParameterLocation.Header,
+                    Description = "Enter: Bearer {your JWT token}"
                 });
 
-                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-
                     {
                         new OpenApiSecurityScheme
                         {
@@ -79,18 +81,12 @@ namespace PulseID.API
                         },
                         Array.Empty<string>()
                     }
-
-
                 });
-
             });
 
-            builder.Services.AddApplication();
-            builder.Services.AddInfrastructure(builder.Configuration);
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
             builder.Services.AddMemoryCache();
 
             builder.Services.AddCors(options =>
@@ -99,33 +95,38 @@ namespace PulseID.API
                 {
                     policy.WithOrigins(
                         "https://localhost:7217",
-                        "http://localhost:5215"
-                        ).AllowAnyHeader().AllowAnyMethod();
-                    
+                        "http://localhost:5215",
+                        "https://localhost:7175",
+                        "https://localhost:5173",
+                        "https://pulse-id-red.vercel.app/"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
                 });
             });
 
-
-
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "PulseID API v1");
+                });
             }
 
-            //app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseGlobalExceptionHandling();
             app.UseHttpsRedirection();
 
             app.UseCors("PulseIDApiCorsPolicy");
+
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
-            
+
             app.Run();
         }
     }

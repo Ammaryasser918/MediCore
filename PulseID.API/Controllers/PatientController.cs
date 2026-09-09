@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.FileProviders;
 using PulseID.Application.DTOs.Patient;
@@ -6,6 +7,7 @@ using PulseID.Application.Interfaces.IServices;
 
 namespace PulseID.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class PatientController : ControllerBase
@@ -20,6 +22,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/patient
+        [Authorize(Roles = "SuperAdmin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IReadOnlyList<PatientDto>>> GetAll(CancellationToken cancellationToken)
@@ -30,6 +33,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/patients/{id}
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -40,6 +44,7 @@ namespace PulseID.API.Controllers
         }
 
         // GET: api/patients/{nationalId}
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
         [HttpGet("by-national-id/{nationalId}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -52,6 +57,7 @@ namespace PulseID.API.Controllers
 
         // POST: api/patients
         [HttpPost]
+        [Authorize(Roles = "SuperAdmin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<PatientDto>> Create([FromBody] CreatePatientDto dto, CancellationToken cancellationToken)
@@ -61,6 +67,7 @@ namespace PulseID.API.Controllers
         }
 
         // PUT: api/patients/{id}
+        [Authorize(Roles = "Patient,SuperAdmin")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -73,6 +80,7 @@ namespace PulseID.API.Controllers
 
 
         // DELETE: api/patient/{id}
+        [Authorize(Roles = "SuperAdmin")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

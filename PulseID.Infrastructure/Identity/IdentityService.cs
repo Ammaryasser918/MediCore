@@ -21,7 +21,7 @@ namespace PulseID.Infrastructure.Identity
         public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
             => await _userManager.FindByEmailAsync(email) is not null;
 
-        public async Task<(bool Succeeded, Guid? UserId, string? Error)> CreateUserAsync(string email, string password, CancellationToken cancellationToken = default)
+        public async Task<(bool Succeeded, Guid? UserId, string? Error)> CreateUserAsync(string email, string password, string role, CancellationToken cancellationToken = default)
         {
             var user = new ApplicationUser
             {
@@ -37,6 +37,15 @@ namespace PulseID.Infrastructure.Identity
             {
                 var error = string.Join("; ", result.Errors.Select(e => e.Description));
                 return (false, null, error);
+            }
+
+            var roleResult = await _userManager.AddToRoleAsync(user, role);
+
+            if (!roleResult.Succeeded)
+            {
+                await _userManager.DeleteAsync(user);
+                var roleError = string.Join("; ", roleResult.Errors.Select(e => e.Description));
+                return (false, null, roleError);
             }
 
             return (true, user.Id, null);
@@ -63,6 +72,14 @@ namespace PulseID.Infrastructure.Identity
         {
             var user = await _userManager.FindByIdAsync(userId.ToString());
             return user?.Email;
+        }
+
+        public async Task<string?> GetUserRoleAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null || !user.IsActive) return null;
+            var roles = await _userManager.GetRolesAsync(user);
+            return roles.FirstOrDefault();
         }
 
     }
