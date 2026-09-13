@@ -117,14 +117,18 @@ namespace PulseID.API.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
-        [Authorize]
+        
         [HttpGet("session")]
         public IActionResult GetSession()
         {
+
+            if (User.Identity is null || !User.Identity.IsAuthenticated)
+                return Ok(new { isAuthenticated = false, user = (object?)null });
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
+            
             return Ok(new
             {
                 isAuthenticated = true,

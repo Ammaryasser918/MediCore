@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PulseID.Application.DTOs.MedicalRecord;
 using PulseID.Application.Interfaces.IServices;
 
 namespace PulseID.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MedicalRecordController : ControllerBase
@@ -18,6 +20,7 @@ namespace PulseID.API.Controllers
 
 
         // POST: api/medicalrecords
+        [Authorize(Roles = "Doctor,HospitalAdmin")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -30,6 +33,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/{id}
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -43,6 +47,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/patient/{patientId}?latestOnly=true
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin")]
         [HttpGet("patient/{patientId:guid}")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -55,6 +60,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/{id}/versions 
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin")]
         [HttpGet("{anyVersionId:guid}/versions")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -67,6 +73,7 @@ namespace PulseID.API.Controllers
 
 
         // POST: api/medicalrecords/{id}/versions
+        [Authorize(Roles = "Doctor,HospitalAdmin")]
         [HttpPost("{currentVersionId:guid}/versions")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

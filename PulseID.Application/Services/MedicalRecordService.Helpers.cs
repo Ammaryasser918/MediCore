@@ -55,6 +55,9 @@ namespace PulseID.Application.Services
         async Task EnsureCanAccessPatientRecordAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
             var currentUserId = RequireCurrentUserId();
+
+            var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
+            if (patient is not null && patient.UserId == currentUserId) return;
             
             await _accessValicationService.EnsureAccessAsync(patientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
         }
@@ -62,6 +65,9 @@ namespace PulseID.Application.Services
         async Task EnsureCanAccessRecordAsync(MedicalRecord record, CancellationToken cancellationToken)
         {
             var currentUserId = RequireCurrentUserId();
+
+            var owningPatient = await _unitOfWork.Patients.GetByIdAsync(record.PatientId, cancellationToken);
+            if (owningPatient is not null && owningPatient.UserId == currentUserId) return;
 
             // The doctor who authored this record can always view it.
             var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken);
