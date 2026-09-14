@@ -10,7 +10,7 @@ namespace PulseID.API
     /// </summary>
     [ApiController]
     [Route("account")]
-    public class AccountController : ControllerBase
+    class AccountController : ControllerBase
     {
         private readonly IOtpApiClient _otpClient;
 

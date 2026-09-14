@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PulseID.API.Authorization;
 using PulseID.API.Common;
 using PulseID.API.Middleware;
 using PulseID.Application;
@@ -53,7 +55,7 @@ namespace PulseID.API
                 };
             });
 
-            
+
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "PulseID API", Version = "v1" });
@@ -104,6 +106,21 @@ namespace PulseID.API
                     .AllowAnyMethod();
                 });
             });
+
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("PatientOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
+                options.AddPolicy("DoctorOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
+                options.AddPolicy("PharmacistOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
+                options.AddPolicy("MedicalRecordOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
+            });
+
+            builder.Services.AddScoped<IAuthorizationHandler, PatientOwnerOrAdminHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, DoctorOwnerOrAdminHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, PharmacistOwnerOrAdminHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, MedicalRecordOwnerOrAdminHandler>();
+
 
             var app = builder.Build();
 
