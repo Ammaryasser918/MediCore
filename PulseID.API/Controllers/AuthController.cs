@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration.UserSecrets;
 using PulseID.Application.DTOs.Auth;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Otp;
@@ -40,7 +41,7 @@ namespace PulseID.API.Controllers
             var result = await _authService.VerifyPatientRegistrationAsync(request.Email, request.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
-            return Ok(new { token = result.Token });
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
         }
 
 
@@ -63,7 +64,7 @@ namespace PulseID.API.Controllers
             var result = await _authService.VerifyDoctorRegistrationAsync(request.Email, request.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
-            return Ok(new { token = result.Token });
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
         }
 
 
@@ -84,7 +85,7 @@ namespace PulseID.API.Controllers
             var result = await _authService.VerifyPharmacistRegistrationAsync(request.Email, request.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
-            return Ok(new { token = result.Token });
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
         }
 
 
@@ -107,16 +108,33 @@ namespace PulseID.API.Controllers
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
 
-            return Ok(new { token = result.Token });
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
         }
+
+
 
         [Authorize]
         [HttpPost("Logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout(CancellationToken cancellationToken)
         {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized();
+            await _authService.LogoutAsync(userId, cancellationToken);
             return Ok(new { message = "Logged out successfully." });
         }
 
+        
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] Application.DTOs.Auth.RefreshRequest request,  CancellationToken cancellationToken)
+        {
+
+            var result = await _authService.RefreshAsync(request.UserId, request.RefreshToken, cancellationToken);
+            if (result is null) return Unauthorized("Invalid or expired refresh token.");
+
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken });
+
+        }
         
         [HttpGet("session")]
         public IActionResult GetSession()

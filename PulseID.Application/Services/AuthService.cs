@@ -79,14 +79,14 @@ namespace PulseID.Application.Services
 
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
 
-                if (!created || userId is null)
+                if (!created || userId == Guid.Empty)
                 {
                     await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
                 var patient = new Patient(
-                    userId.Value,
+                    userId,
                     dto.NationalId,
                     dto.FullName,
                     dto.DateOfBirth,
@@ -97,8 +97,12 @@ namespace PulseID.Application.Services
                 await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 _cache.Remove(cacheKey);
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Patient", email);
-                return new AuthResultDto { Success = true, Token = token };
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Patient", email);
+                var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+                await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+
+                return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken};
             }
             catch (Exception ex)
             {
@@ -148,14 +152,14 @@ namespace PulseID.Application.Services
 
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
 
-                if (!created || userId is null)
+                if (!created || userId == Guid.Empty)
                 {
                     await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
                 var doctor = new Doctor(
-                    userId.Value,
+                    userId,
                     dto.FullName,
                     dto.SyndicateNumber,
                     dto.SyndicateDocumentPath,
@@ -170,8 +174,12 @@ namespace PulseID.Application.Services
                 await _unitOfWork.Doctors.AddAsync(doctor, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 _cache.Remove(cacheKey);
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Doctor", email);
-                return new AuthResultDto { Success = true, Token = token };
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Doctor", email);
+                var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+                await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+
+                return new AuthResultDto { Success = true, AccessToken = newAccessToken , RefreshToken = newRefreshToken};
 
             }
             catch (Exception ex)
@@ -224,14 +232,14 @@ namespace PulseID.Application.Services
 
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
 
-                if (!created || userId is null)
+                if (!created || userId == Guid.Empty)
                 {
                     await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
                 var pharmacist = new Pharmacist(
-                    userId.Value,
+                    userId,
                     dto.FullName,
                     dto.SyndicateNumber,
                     dto.SyndicateDocumentPath,
@@ -246,8 +254,12 @@ namespace PulseID.Application.Services
 
                 _cache.Remove(cacheKey);
 
-                var token = _jwtTokenService.GenerateToken(userId.Value, "Pharmacist", email);
-                return new AuthResultDto { Success = true, Token = token };
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Pharmacist", email);
+                var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+                await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+
+                return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken };
 
             }
             catch(Exception ex)
@@ -268,6 +280,10 @@ namespace PulseID.Application.Services
         {
             const string genericMessage = "If the credentials are valid, an OTP has been sent.";
 
+            bool userExists = await _identityService.EmailExistsAsync(email, cancellationToken);
+            if (!userExists)
+                return new OtpApiResult { Success = true, Message = genericMessage };
+
             if (!await _identityService.CheckPasswordAsync(email, password, cancellationToken))
                 return new OtpApiResult { Success = true, Message = genericMessage };
 
@@ -284,25 +300,48 @@ namespace PulseID.Application.Services
                 return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
             var userId = await _identityService.FindUserIdByEmailAsync(email, cancellationToken);
-            if (userId is null)
+            if (userId == Guid.Empty)
             {
                 return new AuthResultDto { Success = false, Error = "Account not found." };
             }
 
-            var role = await _identityService.GetUserRoleAsync(userId.Value, cancellationToken);
+            var role = await _identityService.GetUserRoleAsync(userId, cancellationToken);
 
             if (string.IsNullOrEmpty(role))
             {
                 return new AuthResultDto { Success = false, Error = "User has no assigned role." };
             }
 
-            var token = _jwtTokenService.GenerateToken(userId.Value, role, email);
-            return new AuthResultDto { Success = true, Token = token };
+            var newAccessToken = _jwtTokenService.GenerateToken(userId, role, email);
+            var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+            await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+
+            return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken };
 
         }
 
+        public async Task LogoutAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            await _identityService.RevokeRefreshTokenAsync(userId, cancellationToken);
+        }
 
+        public async Task<TokenResponse> RefreshAsync(Guid userId, string refreshToken, CancellationToken cancellationToken = default)
+        {
+            if (!await _identityService.ValidateRefreshTokenAsync(userId, refreshToken, cancellationToken))
+                return null;
+            var role = await _identityService.GetUserRoleAsync(userId, cancellationToken);
+            var email = await _identityService.GetEmailByUserIdAsync(userId, cancellationToken);
 
+            var newAccessToken = _jwtTokenService.GenerateToken(userId, role, email);
+            var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+            await _identityService.RevokeRefreshTokenAsync(userId, cancellationToken);
+            await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+            
+            return new TokenResponse { AccessToken = newAccessToken, RefreshToken = newRefreshToken };
+
+        }
 
 
         // A helper method to get the role of the User

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -43,6 +44,16 @@ namespace PulseID.Infrastructure.ExternalServices.JWT
             return new JwtSecurityTokenHandler().WriteToken(token);
 
 
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var bytes = new byte[64];
+
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(bytes);
+
+            return Convert.ToBase64String(bytes);
         }
 
     }
