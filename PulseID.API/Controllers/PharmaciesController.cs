@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Pharmacy;
 using PulseID.Application.Interfaces.IServices;
 
 namespace PulseID.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class PharmaciesController : ControllerBase
@@ -19,6 +22,8 @@ namespace PulseID.API.Controllers
         // GET: api/pharmacies
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [Authorize(Roles = "SuperAdmin")]
+        [EnableRateLimiting("BigDataLimiting")]
         public async Task<ActionResult<IReadOnlyList<PharmacyDto>>> GetAll(CancellationToken cancellationToken)
         {
             var pharmacies = await _pharmacyService.GetAllAsync(cancellationToken);
@@ -31,6 +36,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Authorize(Roles = "SuperAdmin,PharmacyAdmin,Pharmacist")]
         public async Task<ActionResult<PharmacyDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var pharmacy = await _pharmacyService.GetByIdAsync(id, cancellationToken);
@@ -45,6 +51,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Create([FromBody] CreatePharmacyDto dto, CancellationToken cancellationToken)
         {
             var created = await _pharmacyService.CreateAsync(dto, cancellationToken);
@@ -56,6 +63,7 @@ namespace PulseID.API.Controllers
         // DELETE: api/pharmacies/{id}/approve?adminId=...
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             await _pharmacyService.DeleteAsync(id, cancellationToken);
@@ -70,6 +78,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Approve(Guid id, [FromQuery] Guid adminId, CancellationToken cancellationToken)
         {
             var updated = await _pharmacyService.ApproveAsync(id, adminId, cancellationToken);
@@ -84,6 +93,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Reject(Guid id, CancellationToken cancellationToken)
         {
             var updated = await _pharmacyService.RejectAsync(id, cancellationToken);
@@ -98,6 +108,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Deactivate(Guid id, CancellationToken cancellationToken)
         {
             var updated = await _pharmacyService.DeactivateAsync(id, cancellationToken);
@@ -112,6 +123,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Reactivate(Guid id, CancellationToken cancellationToken)
         {
             var updated = await _pharmacyService.ReactivateAsync(id, cancellationToken);
