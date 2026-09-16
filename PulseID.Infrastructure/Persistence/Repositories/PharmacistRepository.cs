@@ -21,6 +21,9 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public Task<Pharmacist?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
             => _dbSet.FirstOrDefaultAsync(ph => ph.NationalId == nationalId && !ph.IsDeleted, cancellationToken);
 
+        public Task<bool> ExistsByNationalIdAsync(string nationalid, CancellationToken cancellationToken = default)
+            => _dbSet.AnyAsync(ph => ph.NationalId == nationalid && !ph.IsDeleted, cancellationToken);
+
         public Task<Pharmacist?> GetBySyndicateNumberAsync(string syndicateNumber, CancellationToken cancellationToken = default)
             => _dbSet.FirstOrDefaultAsync(ph => ph.SyndicateNumber == syndicateNumber && !ph.IsDeleted, cancellationToken);
 

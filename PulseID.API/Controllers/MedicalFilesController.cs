@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PulseID.Application.Common.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.MedicalFiles;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Domain.Enums;
@@ -26,6 +27,7 @@ namespace PulseID.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<MedicalFileDto>>> GetAll(Guid medicalRecordId, CancellationToken cancellationToken)
         {
             var files = await _medicalFileService.GetByMedicalRecordAsync(medicalRecordId, cancellationToken);
