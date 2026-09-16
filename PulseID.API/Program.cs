@@ -146,14 +146,10 @@ namespace PulseID.API
 
 
 
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "PulseID API", Version = "v1" });
-            });
-            
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+            builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             builder.Services.AddAuthorization(options =>
             {
