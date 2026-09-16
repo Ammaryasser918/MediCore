@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces.IServices;
@@ -28,6 +29,7 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<PatientDto>>> GetAll(CancellationToken cancellationToken)
         {
             var patients = await _patientService.GetAllAsync(cancellationToken);
@@ -40,6 +42,7 @@ namespace PulseID.API.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<PatientDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var patient = await _patientService.GetByIdAsync(id, cancellationToken);
@@ -58,6 +61,7 @@ namespace PulseID.API.Controllers
         [HttpGet("by-national-id/{nationalId}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<PatientDto>> GetByNationalId(string nationalId, CancellationToken cancellationToken)
         {
             var patient = await _patientService.GetByNationalIdAsync(nationalId, cancellationToken);

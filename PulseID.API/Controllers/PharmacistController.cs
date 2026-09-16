@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.Interfaces.IServices;
@@ -29,6 +30,7 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "SuperAdmin,PharmacyAdmin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<PharmacistDto>>> GetAll(CancellationToken cancellationToken)
         {
             var pharmacists = await _pharmacistService.GetAllAsync(cancellationToken);
@@ -41,6 +43,7 @@ namespace PulseID.API.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<PharmacistDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var pharmacist = await _pharmacistService.GetByIdAsync(id, cancellationToken);

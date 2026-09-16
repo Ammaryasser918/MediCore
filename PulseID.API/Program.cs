@@ -10,6 +10,9 @@ using PulseID.Application.Common.Interfaces;
 using PulseID.Infrastructure;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace PulseID.API
 {
@@ -18,6 +21,61 @@ namespace PulseID.API
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                string GetUserPartitiohnKey(HttpContext httpContext)
+                {
+                    return httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+                }
+
+                // 5 attempts per IP per minute
+                options.AddPolicy("AuthLimiter", httpContext =>
+                {
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ip,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }
+                        );
+                });
+
+                // 20 requests per user per minute
+                options.AddPolicy("BigDataLimiter", httpContext =>
+                {
+                    var partitionKey = GetUserPartitiohnKey(httpContext);
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: partitionKey,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 20,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        });
+                });
+
+                // 60 requests per user per minute
+                options.AddPolicy("BigDataLimiter", httpContext =>
+                {
+                    var partitionKey = GetUserPartitiohnKey(httpContext);
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: partitionKey,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 60,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        });
+                });
+
+            });
 
 
             builder.Services.AddControllers();
@@ -139,8 +197,11 @@ namespace PulseID.API
 
             app.UseCors("PulseIDApiCorsPolicy");
 
+
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseRateLimiter();
 
             app.MapControllers();
 

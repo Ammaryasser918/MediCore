@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.MedicalRecord;
 using PulseID.Application.Interfaces.IServices;
 
@@ -43,6 +44,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<MedicalRecordDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var record = await _medicalRecordService.GetByIdAsync(id, cancellationToken);
@@ -60,6 +62,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<MedicalRecordListItemDto>>> GetByPatient(Guid patientId, [FromQuery] bool latestOnly = true, CancellationToken cancellationToken = default)
         {
             var patient = await _patientService.GetByIdAsync(patientId, cancellationToken);
@@ -80,6 +83,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<MedicalRecordVersionDto>>> GetVersionHistory(Guid anyVersionId, CancellationToken cancellationToken)
         {
 

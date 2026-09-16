@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.AccessAuthorization;
 using PulseID.Application.Interfaces.IServices;
 using System.Security.Claims;
+
 
 namespace PulseID.API.Controllers
 {
@@ -22,6 +24,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<AccessRequestDto>> RequestAccess(Guid patientId, RequestPatientAccessDto dto, CancellationToken cancellationToken)
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,6 +37,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [EnableRateLimiting("AuthLimiter")]
         public async Task<ActionResult<AccessRequestDto>> VerifyOtp(Guid id, VerifyAccessOtpDto dto, CancellationToken cancellationToken)
         {
             var result = await _accessRequestService.VerifyAccessOtpAsync(id, dto, cancellationToken);

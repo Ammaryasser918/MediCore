@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.API.Authorization;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.Interfaces.IServices;
@@ -27,6 +28,7 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetAll(CancellationToken cancellationToken)
         {
             var doctors = await _doctorService.GetAllAsync(cancellationToken);
@@ -38,6 +40,7 @@ namespace PulseID.API.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<DoctorDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var doctor = await _doctorService.GetByIdAsync(id, cancellationToken);
@@ -54,6 +57,7 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
         [HttpGet("by-department/{departmentId:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetByDepartment(Guid departmentId, CancellationToken cancellationToken)
         {
             var doctors = await _doctorService.GetByDepartmentAsync(departmentId, cancellationToken);
