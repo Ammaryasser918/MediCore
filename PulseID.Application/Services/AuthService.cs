@@ -43,17 +43,19 @@ namespace PulseID.Application.Services
 
             if (await _unitOfWork.Patients.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
                 return new OtpApiResult { Success = true, Message = genericMessage };
+            
+            // Temp bypass, Python OTP server desabled
+            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            //if (!registrationResult.Success)
+            //    return registrationResult;
 
-            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            if (!registrationResult.Success)
-                return registrationResult;
-
-            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
             var cacheKey = $"PendingReg_Patient_{dto.Email}";
             _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
 
-            result.Message ??= genericMessage;
-            return result;
+            //result.Message ??= genericMessage;
+            //return result;
+            return new OtpApiResult { Success = true, Message = genericMessage };
 
             
         }
@@ -71,9 +73,10 @@ namespace PulseID.Application.Services
 
             try
             {
-                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                if (!verification.Success)
-                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+                // Temp bypass, Python OTP Server is disabled
+                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                //if (!verification.Success)
+                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
 
 
@@ -81,7 +84,7 @@ namespace PulseID.Application.Services
 
                 if (!created || userId == Guid.Empty)
                 {
-                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
@@ -106,7 +109,7 @@ namespace PulseID.Application.Services
             }
             catch (Exception ex)
             {
-                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -124,16 +127,18 @@ namespace PulseID.Application.Services
             if (await _unitOfWork.Doctors.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
                 return new OtpApiResult { Success = true, Message = genericMessage };
 
-            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            if (!registrationResult.Success)
-                return registrationResult;
+            // Temp bypass, Python Server is Disabled
+            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            //if (!registrationResult.Success)
+            //    return registrationResult;
 
-            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
             var cacheKey = $"PendingReg_Doctor_{dto.Email}";
             _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
 
-            result.Message ??= genericMessage;
-            return result;
+            //result.Message ??= genericMessage;
+            //return result;
+            return new OtpApiResult { Success = true, Message = genericMessage };
         }
 
         public async Task<AuthResultDto> VerifyDoctorRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
@@ -146,15 +151,16 @@ namespace PulseID.Application.Services
 
             try
             {
-                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                if (!verification.Success)
-                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+                // Temp Bypass, Python Server Disabled
+                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                //if (!verification.Success)
+                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
 
                 if (!created || userId == Guid.Empty)
                 {
-                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
@@ -184,7 +190,7 @@ namespace PulseID.Application.Services
             }
             catch (Exception ex)
             {
-                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -203,17 +209,19 @@ namespace PulseID.Application.Services
             if (await _unitOfWork.Pharmacists.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
                 return new OtpApiResult { Success = true, Message = genericMessage };
 
-            var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            if (!registrationResult.Success)
-                return registrationResult;
+            // Temp Bypass, Python Server is Disabled
+            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
+            //if (!registrationResult.Success)
+            //    return registrationResult;
 
-            var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
 
             var cacheKey = $"PendingReg_Pharmacist_{dto.Email}";
             _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
 
-            result.Message ??= genericMessage;
-            return result;
+            //result.Message ??= genericMessage;
+            //return result;
+            return new OtpApiResult { Success = true, Message = genericMessage };
         }
 
         public async Task<AuthResultDto> VerifyPharmacistRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
@@ -226,15 +234,16 @@ namespace PulseID.Application.Services
 
             try
             {
-                var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                if (!verification.Success)
-                    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+                // Temp Bypass, Python Server is Disabled
+                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+                //if (!verification.Success)
+                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
                 var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
 
                 if (!created || userId == Guid.Empty)
                 {
-                    await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                     return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
                 }
 
@@ -264,7 +273,7 @@ namespace PulseID.Application.Services
             }
             catch(Exception ex)
             {
-                await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
 
@@ -287,17 +296,21 @@ namespace PulseID.Application.Services
             if (!await _identityService.CheckPasswordAsync(email, password, cancellationToken))
                 return new OtpApiResult { Success = true, Message = genericMessage };
 
-            var result = await _otpClient.RequestOtpAsync(email, cancellationToken);
-            result.Message ??= genericMessage;
-            return result;
+            // Temp Bypass, Python OTP Server is Disabled
+            //var result = await _otpClient.RequestOtpAsync(email, cancellationToken);
+            //result.Message ??= genericMessage;
+            //return result;
+
+            return new OtpApiResult { Success = true, Message = genericMessage };
 
         }
 
         public async Task<AuthResultDto> VerifyLoginAsync(string email, string otp, CancellationToken cancellationToken = default)
         {
-            var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-            if (!verification.Success)
-                return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+            // Temp Bypass, Python OTP Server is Disabled
+            //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
+            //if (!verification.Success)
+            //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
 
             var userId = await _identityService.FindUserIdByEmailAsync(email, cancellationToken);
             if (userId == Guid.Empty)
