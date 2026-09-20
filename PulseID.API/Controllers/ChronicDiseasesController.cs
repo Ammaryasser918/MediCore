@@ -25,7 +25,7 @@ namespace PulseID.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        [EnableRateLimiting("BigDataLimiting")]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<ChronicDiseaseDto>>> GetAll(CancellationToken cancellationToken)
         {
             var diseases = await _chronicDiseaseService.GetAllAsync(cancellationToken);
@@ -40,6 +40,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<ChronicDiseaseDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var disease = await _chronicDiseaseService.GetByIdAsync(id, cancellationToken);

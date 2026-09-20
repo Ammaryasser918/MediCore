@@ -8,7 +8,6 @@ using PulseID.Application.Interfaces;
 using PulseID.Infrastructure.ExternalServices.JWT;
 using PulseID.Infrastructure.Identity;
 using PulseID.Infrastructure.Persistence;
-using PulseID.Otp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,8 +41,6 @@ namespace PulseID.Infrastructure
 
 
 
-            services.Configure<OtpApiOptions>(configuration.GetSection("OtpApi"));
-            services.AddHttpClient<IOtpApiClient, OtpApiClient>();
 
             return services;
 

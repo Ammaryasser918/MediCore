@@ -44,7 +44,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [EnableRateLimiting("BigDataLimiter")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<MedicalRecordDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var record = await _medicalRecordService.GetByIdAsync(id, cancellationToken);

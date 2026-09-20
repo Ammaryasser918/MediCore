@@ -16,9 +16,9 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         {
         }
 
-        public Task<OTP?> GetLatestActiveAsync(Guid userId, OtpPurpose purpose, CancellationToken cancellationToken = default)
+        public Task<OTP?> GetLatestActiveAsync(string email, OtpPurpose purpose, CancellationToken cancellationToken = default)
             => _dbSet
-            .Where(o => o.UserId == userId && o.Purpose == purpose && o.ExpiresAt > DateTime.UtcNow && !o.IsUsed)
+            .Where(o => o.Email == email && o.Purpose == purpose && o.ExpiresAt > DateTime.UtcNow && !o.IsUsed)
             .OrderByDescending(o => o.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 

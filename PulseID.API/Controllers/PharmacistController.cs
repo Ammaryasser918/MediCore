@@ -43,7 +43,7 @@ namespace PulseID.API.Controllers
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [EnableRateLimiting("BigDataLimiter")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<PharmacistDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var pharmacist = await _pharmacistService.GetByIdAsync(id, cancellationToken);

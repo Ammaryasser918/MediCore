@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using PulseID.Application.DTOs.Auth;
+using PulseID.Application.DTOs.OTP;
 using PulseID.Application.Interfaces.IServices;
-using PulseID.Otp;
+
 using System.Diagnostics.Contracts;
 using System.Security.Claims;
 
@@ -34,15 +35,20 @@ namespace PulseID.API.Controllers
         public async Task<IActionResult> RequestPatientRegisterationOtp([FromBody] RegisterPatientDto dto, CancellationToken cancellationToken)
         {
             var result = await _authService.RequestPatientRegistrationOtpAsync(dto, cancellationToken);
-            return Ok(new { message = result.Message });
+            return Ok(new 
+            { 
+                message = result.Message, 
+                registrationToken = result.RegistrationToken,
+                OTP = result.Otp
+            });
         }
 
         // POST: api/auth/patient/register/verify
         [HttpPost("patient/register/verify")]
         [EnableRateLimiting("AuthLimiter")]
-        public async Task<IActionResult> VerifyPatientRegisteration([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> VerifyPatientRegisteration([FromBody] VerifyRegistrationDto dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.VerifyPatientRegistrationAsync(request.Email, request.Otp, cancellationToken);
+            var result = await _authService.VerifyPatientRegistrationAsync(dto.RegistrationToken, dto.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
             return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
@@ -58,16 +64,21 @@ namespace PulseID.API.Controllers
         public async Task<IActionResult> RequestDoctorRegisterationOtp([FromBody] RegisterDoctorDto dto, CancellationToken cancellationToken)
         {
             var result = await _authService.RequestDoctorRegistrationOtpAsync(dto, cancellationToken);
-            return Ok(new { message = result.Message });
+            return Ok(new
+            {
+                message = result.Message,
+                registrationToken = result.RegistrationToken,
+                OTP = result.Otp
+            });
         }
 
 
         // POST: api/auth/doctor/register/verify
         [HttpPost("doctor/register/verify")]
         [EnableRateLimiting("AuthLimiter")]
-        public async Task<IActionResult> VerifyDoctorRegisteration([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> VerifyDoctorRegisteration([FromBody] VerifyRegistrationDto dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.VerifyDoctorRegistrationAsync(request.Email, request.Otp, cancellationToken);
+            var result = await _authService.VerifyDoctorRegistrationAsync(dto.RegistrationToken, dto.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
             return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
@@ -82,15 +93,20 @@ namespace PulseID.API.Controllers
         public async Task<IActionResult> RequestPharmacistRegisterationOtp([FromBody] RegisterPharmacistDto dto, CancellationToken cancellationToken)
         {
             var result = await _authService.RequestPharmacistRegistrationOtpAsync(dto, cancellationToken);
-            return Ok(new { message = result.Message });
+            return Ok(new
+            {
+                message = result.Message,
+                registrationToken = result.RegistrationToken,
+                OTP = result.Otp
+            });
         }
 
         // POST: api/auth/pharmacist/register/verify
         [HttpPost("pharmacist/register/verify")]
         [EnableRateLimiting("AuthLimiter")]
-        public async Task<IActionResult> VerifyPharmacistRegisteration([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> VerifyPharmacistRegisteration([FromBody] VerifyRegistrationDto dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.VerifyPharmacistRegistrationAsync(request.Email, request.Otp, cancellationToken);
+            var result = await _authService.VerifyPharmacistRegistrationAsync(dto.RegistrationToken, dto.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
             return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
@@ -105,16 +121,20 @@ namespace PulseID.API.Controllers
         public async Task<IActionResult> RequestLoginOtp([FromBody] LoginRequest request, CancellationToken cancellationToken)
         {
             var result = await _authService.RequestLoginOtpAsync(request.Email, request.Password, cancellationToken);
-            return Ok(new { message = result.Message });
+            return Ok(new
+            {
+                message = result.Message,
+                OTP = result.Otp
+            });
         }
 
 
         // POST: api/auth/login/verify
         [HttpPost("login/verify")]
         [EnableRateLimiting("AuthLimiter")]
-        public async Task<IActionResult> VerifyLogin([FromBody] VerifyOtpRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> VerifyLogin(VerifyLoginDto dto, CancellationToken cancellationToken)
         {
-            var result = await _authService.VerifyLoginAsync(request.Email, request.Otp, cancellationToken);
+            var result = await _authService.VerifyLoginAsync(dto.Email, dto.Otp, cancellationToken);
             if (!result.Success)
                 return BadRequest(new { message = result.Error });
 

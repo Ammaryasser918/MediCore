@@ -77,6 +77,15 @@ namespace PulseID.Infrastructure.Identity
             var user = await _userManager.FindByIdAsync(userId.ToString());
             return user.Email;
         }
+        public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+                return false;
+
+            var result = await _userManager.DeleteAsync(user);
+            return result.Succeeded;
+        }
 
         public async Task<string> GetUserRoleAsync(Guid userId, CancellationToken cancellationToken = default)
         {

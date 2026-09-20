@@ -17,14 +17,14 @@ namespace PulseID.Infrastructure.Persistence.Configurations
             builder.ToTable("OTPs");
             builder.HasKey(o => o.Id);
 
-            builder.Property(o => o.UserId).IsRequired();
             builder.Property(o => o.CodeHash).IsRequired();
+            builder.Property(o => o.Email).IsRequired();
 
-            builder.HasIndex(o => new { o.UserId, o.Purpose, o.IsUsed });
+            builder.HasIndex(o => new { o.Email, o.Purpose, o.IsUsed });
 
             builder.HasOne<ApplicationUser>()
                 .WithMany()
-                .HasForeignKey(o => o.UserId)
+                .HasForeignKey(o => o.UserId).IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
 
         }
