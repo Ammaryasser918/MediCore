@@ -714,6 +714,10 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
@@ -729,12 +733,14 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Purpose", "IsUsed");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Email", "Purpose", "IsUsed");
 
                     b.ToTable("OTPs", (string)null);
                 });
@@ -1320,8 +1326,7 @@ namespace PulseID.Infrastructure.Migrations
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.Patient", b =>

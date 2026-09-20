@@ -37,6 +37,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Authorize(Roles = "SuperAdmin,PharmacyAdmin,Pharmacist")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<PharmacyDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var pharmacy = await _pharmacyService.GetByIdAsync(id, cancellationToken);

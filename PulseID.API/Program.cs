@@ -62,7 +62,7 @@ namespace PulseID.API
                 });
 
                 // 60 requests per user per minute
-                options.AddPolicy("BigDataLimiter", httpContext =>
+                options.AddPolicy("SmallDataLimiter", httpContext =>
                 {
                     var partitionKey = GetUserPartitiohnKey(httpContext);
                     return RateLimitPartition.GetFixedWindowLimiter(
@@ -73,6 +73,20 @@ namespace PulseID.API
                             Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0
                         });
+                });
+
+                options.AddPolicy("OTPLimiter", httpContext =>
+                {
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ip,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }
+                        );
                 });
 
             });

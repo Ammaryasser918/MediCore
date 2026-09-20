@@ -24,8 +24,4 @@
 		<ProjectReference Include="..\PulseID.Domain\PulseID.Domain.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="ExternalServices\OTP\" />
-	</ItemGroup>
-
 </Project>

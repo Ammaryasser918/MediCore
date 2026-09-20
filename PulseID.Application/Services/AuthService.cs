@@ -4,6 +4,7 @@ using PulseID.Application.DTOs.Auth;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Domain.Entities;
+using PulseID.Domain.Enums;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
@@ -11,82 +12,103 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using PulseID.Application.DTOs.OTP;
+using Microsoft.AspNetCore.DataProtection;
+using System.Text.Json;
 
 namespace PulseID.Application.Services
 {
     public class AuthService : IAuthService
     {
-        readonly IOtpApiClient _otpClient;
+        readonly IOTPService _otpService;
         readonly IIdentityService _identityService;
         readonly IUnitOfWork _unitOfWork;
         readonly IJwtTokenService _jwtTokenService;
-        readonly IMemoryCache _cache;
+        readonly IDataProtector _protector;
 
-        public AuthService(IOtpApiClient otpApiClient, IIdentityService identityService, IUnitOfWork unitOfWork, IJwtTokenService jwtTokenService, IMemoryCache cache)
+        public AuthService(IOTPService otpService, IIdentityService identityService, IUnitOfWork unitOfWork, IJwtTokenService jwtTokenService, IDataProtectionProvider provider)
         {
-            _otpClient = otpApiClient;
+            _otpService = otpService;
             _identityService = identityService;
             _unitOfWork = unitOfWork;
             _jwtTokenService = jwtTokenService;
-            _cache = cache;
+            _protector = provider.CreateProtector("PulseID.PatientRegistration.v1");
         }
 
 
         // ============== < Patient Registration Section> ===================
 
-        public async Task<OtpApiResult> RequestPatientRegistrationOtpAsync(RegisterPatientDto dto, CancellationToken cancellationToken = default)
+        public async Task<OtpResultDto> RequestPatientRegistrationOtpAsync(RegisterPatientDto dto, CancellationToken cancellationToken = default)
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
 
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
             if (await _unitOfWork.Patients.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
-            
-            // Temp bypass, Python OTP server desabled
-            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            //if (!registrationResult.Success)
-            //    return registrationResult;
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
-            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
-            var cacheKey = $"PendingReg_Patient_{dto.Email}";
-            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
+            var requestDto = new RequestOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Channel = OtpChannel.Email
+            };
+        
+            var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
 
-            //result.Message ??= genericMessage;
-            //return result;
-            return new OtpApiResult { Success = true, Message = genericMessage };
+            var jsonDto = JsonSerializer.Serialize(dto);
+            var registerationToken = _protector.Protect(jsonDto);
+            registrationResult.RegistrationToken = registerationToken; 
+
+            return registrationResult;
 
             
         }
 
 
-        public async Task<AuthResultDto> VerifyPatientRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        public async Task<AuthResultDto> VerifyPatientRegistrationAsync(string registrationToken, string otp, CancellationToken cancellationToken = default)
         {
 
-            var cacheKey = $"PendingReg_Patient_{email}";
-            if (!_cache.TryGetValue(cacheKey, out RegisterPatientDto? dto) || dto is null)
+            RegisterPatientDto? dto;
+            try
             {
-                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+                var jsonDto = _protector.Unprotect(registrationToken);
+                dto = JsonSerializer.Deserialize<RegisterPatientDto>(jsonDto);
+
+                if (dto is null)
+                    return new AuthResultDto { Success = false, Error = "Invalid Registration Payload." };
+            }
+            catch (Exception)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or token is invalid." };
             }
 
 
+            var verifyOtpDto = new VerifyOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Otp = otp
+            };
+            var verification = await _otpService.VerifyOtpAsync(verifyOtpDto, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
+
+
+
+            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
+
+            if (!created || userId == Guid.Empty)
+            {
+                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+            }
+
             try
             {
-                // Temp bypass, Python OTP Server is disabled
-                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                //if (!verification.Success)
-                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
-
-
-
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
-
-                if (!created || userId == Guid.Empty)
-                {
-                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
-                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-                }
+                
 
                 var patient = new Patient(
                     userId,
@@ -99,17 +121,16 @@ namespace PulseID.Application.Services
 
                 await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                _cache.Remove(cacheKey);
-                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Patient", email);
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Patient", dto.Email);
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
 
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken};
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                await _identityService.DeleteUserAsync(userId, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -117,52 +138,71 @@ namespace PulseID.Application.Services
 
         // ========================== < Doctor Registration Section> =============================
 
-        public async Task<OtpApiResult> RequestDoctorRegistrationOtpAsync(RegisterDoctorDto dto, CancellationToken cancellationToken = default)
+        public async Task<OtpResultDto> RequestDoctorRegistrationOtpAsync(RegisterDoctorDto dto, CancellationToken cancellationToken = default)
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
 
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
             if (await _unitOfWork.Doctors.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
-            // Temp bypass, Python Server is Disabled
-            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            //if (!registrationResult.Success)
-            //    return registrationResult;
+            var requestDto = new RequestOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Channel = OtpChannel.Email
+            };
 
-            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
-            var cacheKey = $"PendingReg_Doctor_{dto.Email}";
-            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
+            var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
 
-            //result.Message ??= genericMessage;
-            //return result;
-            return new OtpApiResult { Success = true, Message = genericMessage };
+            var jsonDto = JsonSerializer.Serialize(dto);
+            var registerationToken = _protector.Protect(jsonDto);
+            registrationResult.RegistrationToken = registerationToken;
+
+            return registrationResult;
         }
 
-        public async Task<AuthResultDto> VerifyDoctorRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        public async Task<AuthResultDto> VerifyDoctorRegistrationAsync(string registrationToken, string otp, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"PendingReg_Doctor_{email}";
-            if (!_cache.TryGetValue(cacheKey, out RegisterDoctorDto? dto) || dto is null)
+            RegisterDoctorDto? dto;
+            try
             {
-                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+                var jsonDto = _protector.Unprotect(registrationToken);
+                dto = JsonSerializer.Deserialize<RegisterDoctorDto>(jsonDto);
+                if (dto is null)
+                    return new AuthResultDto { Success = false, Error = "Invalid registation token." };
             }
+            catch (Exception)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or token is invalid" };
+            }
+
+
+            var verifyDto = new VerifyOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Otp = otp
+            };
+            var verification = await _otpService.VerifyOtpAsync(verifyDto, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
+
+            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
+
+            if (!created || userId == Guid.Empty)
+            {
+                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+            }
+
 
             try
             {
-                // Temp Bypass, Python Server Disabled
-                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                //if (!verification.Success)
-                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
-
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
-
-                if (!created || userId == Guid.Empty)
-                {
-                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
-                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-                }
+                
 
                 var doctor = new Doctor(
                     userId,
@@ -179,8 +219,8 @@ namespace PulseID.Application.Services
 
                 await _unitOfWork.Doctors.AddAsync(doctor, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
-                _cache.Remove(cacheKey);
-                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Doctor", email);
+                
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Doctor", dto.Email);
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
@@ -188,9 +228,9 @@ namespace PulseID.Application.Services
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken , RefreshToken = newRefreshToken};
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                await _identityService.DeleteUserAsync(userId, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -200,52 +240,68 @@ namespace PulseID.Application.Services
 
         // ========================== < Pharmacist Registration Section> =============================
 
-        public async Task<OtpApiResult> RequestPharmacistRegistrationOtpAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default)
+        public async Task<OtpResultDto> RequestPharmacistRegistrationOtpAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default)
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
             if (await _unitOfWork.Pharmacists.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
-            // Temp Bypass, Python Server is Disabled
-            //var registrationResult = await _otpClient.RegisterAsync(dto, cancellationToken);
-            //if (!registrationResult.Success)
-            //    return registrationResult;
+            var requestDto = new RequestOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Channel = OtpChannel.Email
+            };            
+            
+            var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
 
-            //var result = await _otpClient.RequestOtpAsync(dto.Email, cancellationToken);
+            var jsonDto = JsonSerializer.Serialize(dto);
+            var registrationToken = _protector.Protect(jsonDto);
+            registrationResult.RegistrationToken = registrationToken;
 
-            var cacheKey = $"PendingReg_Pharmacist_{dto.Email}";
-            _cache.Set(cacheKey, dto, TimeSpan.FromMinutes(10));
-
-            //result.Message ??= genericMessage;
-            //return result;
-            return new OtpApiResult { Success = true, Message = genericMessage };
+            return registrationResult;
         }
 
-        public async Task<AuthResultDto> VerifyPharmacistRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default)
+        public async Task<AuthResultDto> VerifyPharmacistRegistrationAsync(string registrationToken, string otp, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"PendingReg_Pharmacist_{email}";
-            if (!_cache.TryGetValue(cacheKey, out RegisterPharmacistDto? dto) || dto is null)
+            RegisterPharmacistDto? dto;
+            try
             {
-                return new AuthResultDto { Success = false, Error = "Registration session expired or invalid email. Please request a new OTP." };
+                var jsonDto = _protector.Unprotect(registrationToken);
+                dto = JsonSerializer.Deserialize<RegisterPharmacistDto>(jsonDto);
+                if (dto is null)
+                    return new AuthResultDto { Success = false, Error = "Invalid registration Payload." };
+            }
+            catch (Exception)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or token is invalid." };
+            }
+
+            var verifyDto = new VerifyOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Otp = otp
+            };
+            var verification = await _otpService.VerifyOtpAsync(verifyDto, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
+
+            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
+
+            if (!created || userId == Guid.Empty)
+            {
+                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
             }
 
             try
             {
-                // Temp Bypass, Python Server is Disabled
-                //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-                //if (!verification.Success)
-                //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
-
-                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
-
-                if (!created || userId == Guid.Empty)
-                {
-                    //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
-                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-                }
+                
 
                 var pharmacist = new Pharmacist(
                     userId,
@@ -261,9 +317,8 @@ namespace PulseID.Application.Services
                 await _unitOfWork.Pharmacists.AddAsync(pharmacist, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                _cache.Remove(cacheKey);
 
-                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Pharmacist", email);
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, "Pharmacist", dto.Email);
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
@@ -271,9 +326,9 @@ namespace PulseID.Application.Services
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken };
 
             }
-            catch(Exception ex)
+            catch(Exception)
             {
-                //await _otpClient.RollbackRegistrationAsync(email, cancellationToken);
+                await _identityService.DeleteUserAsync(userId, cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
 
@@ -285,32 +340,44 @@ namespace PulseID.Application.Services
 
         // ========================== < Login Section> =============================
 
-        public async Task<OtpApiResult> RequestLoginOtpAsync(string email, string password, CancellationToken cancellationToken = default)
+        public async Task<OtpResultDto> RequestLoginOtpAsync(string email, string password, CancellationToken cancellationToken = default)
         {
             const string genericMessage = "If the credentials are valid, an OTP has been sent.";
 
             bool userExists = await _identityService.EmailExistsAsync(email, cancellationToken);
             if (!userExists)
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
             if (!await _identityService.CheckPasswordAsync(email, password, cancellationToken))
-                return new OtpApiResult { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = genericMessage };
 
-            // Temp Bypass, Python OTP Server is Disabled
-            //var result = await _otpClient.RequestOtpAsync(email, cancellationToken);
-            //result.Message ??= genericMessage;
-            //return result;
+            var requstDto = new RequestOtpDto
+            {
+                Email = email,
+                Purpose = OtpPurpose.Login,
+                Channel = OtpChannel.Email
+            };
 
-            return new OtpApiResult { Success = true, Message = genericMessage };
+            var result = await _otpService.GenerateAndSendOtpAsync(requstDto, cancellationToken);
+            result.Message = genericMessage;
+            return result;
+
+           
 
         }
 
         public async Task<AuthResultDto> VerifyLoginAsync(string email, string otp, CancellationToken cancellationToken = default)
         {
-            // Temp Bypass, Python OTP Server is Disabled
-            //var verification = await _otpClient.VerifyOtpAsync(email, otp, cancellationToken);
-            //if (!verification.Success)
-            //    return new AuthResultDto { Success = false, Error = verification.Error ?? "Invalid or expired OTP." };
+            var verifyDto = new VerifyOtpDto
+            {
+                Email = email,
+                Purpose = OtpPurpose.Login,
+                Otp = otp
+            };
+
+            var verification = await _otpService.VerifyOtpAsync(verifyDto, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
 
             var userId = await _identityService.FindUserIdByEmailAsync(email, cancellationToken);
             if (userId == Guid.Empty)

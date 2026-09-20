@@ -13,7 +13,8 @@ namespace PulseID.Domain.Entities
 
         public const int MaxAttempts = 5;
 
-        public Guid UserId { get; private set; } = default!;
+        public Guid? UserId { get; private set; }
+        public string Email { get; private set; } = default!;
         public string CodeHash { get; private set; } = default!;
         public OtpPurpose Purpose { get; private set; }
         public OtpChannel Channel { get; private set; }
@@ -24,17 +25,18 @@ namespace PulseID.Domain.Entities
 
         OTP() { }
 
-        public OTP(Guid userId, string codeHash, OtpPurpose purpose, OtpChannel channel, TimeSpan validity)
+        public OTP(string email, string codeHash, OtpPurpose purpose, OtpChannel channel, TimeSpan validity, Guid? userId = null)
         {
-            if (userId == Guid.Empty)
-                throw new ArgumentException("User Id is required", nameof(userId));
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required", nameof(email));
             if (string.IsNullOrWhiteSpace(codeHash))
                 throw new ArgumentException("Code hash is required", nameof(codeHash));
-            UserId = userId;
+            Email = email;
             CodeHash = codeHash;
             Purpose = purpose;
             Channel = channel;
             ExpiresAt = DateTime.UtcNow.Add(validity);
+            UserId = userId;
         }
 
         public bool IsExpired() => DateTime.UtcNow > ExpiresAt;

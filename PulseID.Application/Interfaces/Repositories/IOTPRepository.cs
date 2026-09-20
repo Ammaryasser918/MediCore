@@ -11,6 +11,6 @@ namespace PulseID.Application.Interfaces.Repositories
 {
     public interface IOTPRepository : IRepository<OTP>
     {
-        Task<OTP?> GetLatestActiveAsync(Guid userId, OtpPurpose purpose, CancellationToken cancellationToken = default);
+        Task<OTP?> GetLatestActiveAsync(string email, OtpPurpose purpose, CancellationToken cancellationToken = default);
     }
 }

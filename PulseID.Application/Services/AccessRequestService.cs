@@ -1,12 +1,15 @@
 ﻿using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.AccessAuthorization;
+using PulseID.Application.DTOs.OTP;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Domain.Entities;
+using PulseID.Domain.Enums;
 using PulseID.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,14 +21,14 @@ namespace PulseID.Application.Services
         readonly IUnitOfWork _unitOfWork;
         readonly ICurrentUserService _currentUserService;
         readonly IIdentityService _identityService;
-        readonly IOtpApiClient _otpClient;
+        readonly IOTPService _otpService;
 
-        public AccessRequestService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IIdentityService identityService,  IOtpApiClient otpClient)
+        public AccessRequestService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IIdentityService identityService,  IOTPService otpService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _identityService = identityService;
-            _otpClient = otpClient;
+            _otpService = otpService;
         }
 
         public async Task<AccessRequestDto> RequestAccessAsync(Guid patientId, RequestPatientAccessDto dto, CancellationToken cancellationToken = default)
@@ -44,8 +47,8 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var patientEmail = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
-
-            var result = await _otpClient.RequestOtpAsync(patientEmail, cancellationToken);
+            var requestDto = new RequestOtpDto { Email = patientEmail, Purpose = OtpPurpose.AccessAuthorization, Channel = OtpChannel.Email };
+            var result = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
 
             if (!result.Success)
                 throw new BusinessRuleViolationException(result.Message ?? "Failed to send OTP to the patient.");
@@ -70,10 +73,11 @@ namespace PulseID.Application.Services
             var patientEmail = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken)
                 ?? throw new BusinessRuleViolationException("Patient doesn't have a registered email.");
 
-            var verification = await _otpClient.VerifyOtpAsync(patientEmail, dto.Otp, cancellationToken);
+            var verifyDto = new VerifyOtpDto { Email = patientEmail, Otp = dto.Otp, Purpose = OtpPurpose.AccessAuthorization };
+            var verification = await _otpService.VerifyOtpAsync(verifyDto, cancellationToken);
 
             if (!verification.Success)
-                throw new BusinessRuleViolationException(verification.Error ?? "Invalid or expired OTP.");
+                throw new BusinessRuleViolationException(verification.Message ?? "Invalid or expired OTP.");
 
             accessRequest.Approve();
 

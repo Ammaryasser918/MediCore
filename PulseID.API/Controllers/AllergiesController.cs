@@ -24,7 +24,7 @@ namespace PulseID.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        [EnableRateLimiting("BigDataLimiting")]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<AllergyDto>>> GetAll(CancellationToken cancellationToken)
         {
             var allergies = await _allergyService.GetAllAsync(cancellationToken);
@@ -48,6 +48,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<AllergyDto>> GetById(Guid id, CancellationToken cancellationToken)
         {
             var allergy = await _allergyService.GetByIdAsync(id, cancellationToken);
