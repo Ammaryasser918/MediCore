@@ -42,6 +42,16 @@ namespace PulseID.Application.Services
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
 
+            var (isPasswordValid, passwordError) = await _identityService.ValidatePasswordsAsync(dto.Password);
+            if (!isPasswordValid)
+            {
+                return new OtpResultDto
+                {
+                    Success = false,
+                    Message = passwordError ?? "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one non-alphanumeric character."
+                };
+            }
+
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
                 return new OtpResultDto { Success = true, Message = genericMessage };
 
@@ -52,7 +62,7 @@ namespace PulseID.Application.Services
             {
                 Email = dto.Email,
                 Purpose = OtpPurpose.Registration,
-                Channel = OtpChannel.Email
+                Channel = NotificationChannel.Email
             };
         
             var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
@@ -142,6 +152,16 @@ namespace PulseID.Application.Services
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
 
+            var (isPasswordValid, passwordError) = await _identityService.ValidatePasswordsAsync(dto.Password);
+            if (!isPasswordValid)
+            {
+                return new OtpResultDto
+                {
+                    Success = false,
+                    Message = passwordError ?? "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one non-alphanumeric character."
+                };
+            }
+
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
                 return new OtpResultDto { Success = true, Message = genericMessage };
 
@@ -152,7 +172,7 @@ namespace PulseID.Application.Services
             {
                 Email = dto.Email,
                 Purpose = OtpPurpose.Registration,
-                Channel = OtpChannel.Email
+                Channel = NotificationChannel.Email
             };
 
             var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
@@ -243,6 +263,18 @@ namespace PulseID.Application.Services
         public async Task<OtpResultDto> RequestPharmacistRegistrationOtpAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default)
         {
             const string genericMessage = "If this email is available an OTP has been sent.";
+
+            var (isPasswordValid, passwordError) = await _identityService.ValidatePasswordsAsync(dto.Password);
+            if (!isPasswordValid)
+            {
+                return new OtpResultDto
+                {
+                    Success = false,
+                    Message = passwordError ?? "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one non-alphanumeric character."
+                };
+            }
+
+
             if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
                 return new OtpResultDto { Success = true, Message = genericMessage };
 
@@ -253,7 +285,7 @@ namespace PulseID.Application.Services
             {
                 Email = dto.Email,
                 Purpose = OtpPurpose.Registration,
-                Channel = OtpChannel.Email
+                Channel = NotificationChannel.Email
             };            
             
             var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
@@ -355,7 +387,7 @@ namespace PulseID.Application.Services
             {
                 Email = email,
                 Purpose = OtpPurpose.Login,
-                Channel = OtpChannel.Email
+                Channel = NotificationChannel.Email
             };
 
             var result = await _otpService.GenerateAndSendOtpAsync(requstDto, cancellationToken);

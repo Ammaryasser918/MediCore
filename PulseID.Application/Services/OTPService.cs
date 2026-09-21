@@ -14,6 +14,7 @@ using PulseID.Application.Common.Interfaces;
 using PulseID.Application.Common.Exceptions;
 using PulseID.Application.DTOs.Doctor;
 using System.Numerics;
+using PulseID.Application.Common.Templates;
 
 namespace PulseID.Application.Services
 {
@@ -22,10 +23,13 @@ namespace PulseID.Application.Services
 
         private readonly IUnitOfWork _unitOfWork;
         private readonly IIdentityService _identityService;
-        public OTPService(IUnitOfWork unitOfWork, IIdentityService identityService)
+        private readonly INotificationSender _notificationSender;
+        
+        public OTPService(IUnitOfWork unitOfWork, IIdentityService identityService, INotificationSender notificationSender)
         {
             _unitOfWork = unitOfWork;
             _identityService = identityService;
+            _notificationSender = notificationSender;
         }
 
 
@@ -54,9 +58,12 @@ namespace PulseID.Application.Services
 
             var codeHash = HashOtpCode(rawCode);
 
-            var otp = new OTP(dto.Email, codeHash, purpose: dto.Purpose, channel: dto.Channel, validity: TimeSpan.FromMinutes(5));
+            var otp = new OTP(dto.Email, codeHash, purpose: dto.Purpose, channel: (OtpChannel)dto.Channel, validity: TimeSpan.FromMinutes(5));
 
             // Notify By Email or whatever
+            string emailBody = OtpEmailTemplate.Build(rawCode);
+
+            await _notificationSender.SendAsync(dto.Channel, recipient: dto.Email, subject: "PulseID - Verification Code", message: emailBody, cancellationToken: cancellationToken);
 
             await _unitOfWork.Otps.AddAsync(otp, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -5,7 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.Interfaces;
+using PulseID.Application.Services;
 using PulseID.Infrastructure.ExternalServices.JWT;
+using PulseID.Infrastructure.ExternalServices.Notifications.ViaGmail;
 using PulseID.Infrastructure.Identity;
 using PulseID.Infrastructure.Persistence;
 using System;
@@ -39,7 +41,11 @@ namespace PulseID.Infrastructure
 
             services.AddScoped<IIdentityService, IdentityService>();
 
+            services.Configure<EmailOptions>(configuration.GetSection("Email"));
 
+            services.AddScoped<INotificationChannelStrategy, EmailNotificationStrategy>();
+
+            services.AddScoped<INotificationSender, NotificationSender>();
 
 
             return services;

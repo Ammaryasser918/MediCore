@@ -14,6 +14,6 @@ namespace PulseID.Application.DTOs.OTP
         [EmailAddress(ErrorMessage = "Invalid email address format")]
         public string Email { get; set; } = default!;
         public OtpPurpose Purpose { get; set; } = default!;
-        public OtpChannel Channel { get; set; } = default!;
+        public NotificationChannel Channel { get; set; } = default!;
     }
 }

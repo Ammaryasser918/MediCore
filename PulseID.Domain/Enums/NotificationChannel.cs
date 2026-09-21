@@ -11,6 +11,7 @@ namespace PulseID.Domain.Enums
         SMS = 1,
         Email = 2,
         Push = 3,
-        InApp = 4
+        InApp = 4,
+        Whatsapp = 5
     }
 }

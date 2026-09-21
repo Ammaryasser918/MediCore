@@ -47,7 +47,7 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var patientEmail = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
-            var requestDto = new RequestOtpDto { Email = patientEmail, Purpose = OtpPurpose.AccessAuthorization, Channel = OtpChannel.Email };
+            var requestDto = new RequestOtpDto { Email = patientEmail, Purpose = OtpPurpose.AccessAuthorization, Channel = NotificationChannel.Email };
             var result = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
 
             if (!result.Success)

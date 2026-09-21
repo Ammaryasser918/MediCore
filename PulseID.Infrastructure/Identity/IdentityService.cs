@@ -56,7 +56,33 @@ namespace PulseID.Infrastructure.Identity
 
         }
 
+        public async Task<(bool IsValid, string? Error)> ValidatePasswordsAsync(string password, CancellationToken cancellationToken = default)
+        {
+            var dummyUser = new ApplicationUser
+            {
+                Id = Guid.NewGuid(),
+                UserName = "temp_validation_user",
+                Email = "validation@pulseid.com"
+            };
 
+            var errors = new List<string>();
+
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var result = await validator.ValidateAsync(_userManager, dummyUser, password);
+                if (!result.Succeeded)
+                {
+                    errors.AddRange(result.Errors.Select(e => e.Description));
+                }
+            }
+
+            if (errors.Any())
+            {
+                return (false, string.Join(" | ", errors));
+            }
+
+            return (true, null);
+        }
         public async Task<bool> CheckPasswordAsync(string email, string password, CancellationToken cancellationToken = default)
         {
             var user = await _userManager.FindByEmailAsync(email);
