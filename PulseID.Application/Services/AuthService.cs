@@ -98,17 +98,17 @@ namespace PulseID.Application.Services
                 return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
 
 
-
-            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
-
-            if (!created || userId == Guid.Empty)
-            {
-                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-            }
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            
 
             try
             {
-                
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Patient", cancellationToken);
+
+                if (!created || userId == Guid.Empty)
+                {
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var patient = new Patient(
                     userId,
@@ -125,12 +125,12 @@ namespace PulseID.Application.Services
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
-
+                await transaction.CommitAsync(cancellationToken);
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken};
             }
             catch (Exception)
             {
-                await _identityService.DeleteUserAsync(userId, cancellationToken);
+                await transaction.RollbackAsync(cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -192,17 +192,18 @@ namespace PulseID.Application.Services
             if (!verification.Success)
                 return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
 
-            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
 
-            if (!created || userId == Guid.Empty)
-            {
-                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-            }
-
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
             {
-                
+
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Doctor", cancellationToken);
+
+                if (!created || userId == Guid.Empty)
+                {
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var doctor = new Doctor(
                     userId,
@@ -212,8 +213,7 @@ namespace PulseID.Application.Services
                     dto.NationalId,
                     dto.Specialization,
                     dto.PhoneNumber,
-                    dto.DepartmentId,
-                    dto.PersonalImagePath
+                    personalImagePath:dto.PersonalImagePath
                     );
 
 
@@ -224,13 +224,13 @@ namespace PulseID.Application.Services
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
-
+                await transaction.CommitAsync(cancellationToken);
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken , RefreshToken = newRefreshToken};
 
             }
             catch (Exception)
             {
-                await _identityService.DeleteUserAsync(userId, cancellationToken);
+                await transaction.RollbackAsync(cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
         }
@@ -292,16 +292,17 @@ namespace PulseID.Application.Services
             if (!verification.Success)
                 return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
 
-            var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
-
-            if (!created || userId == Guid.Empty)
-            {
-                return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
-            }
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
             {
-                
+
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "Pharmacist", cancellationToken);
+
+                if (!created || userId == Guid.Empty)
+                {
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+                }
 
                 var pharmacist = new Pharmacist(
                     userId,
@@ -322,13 +323,13 @@ namespace PulseID.Application.Services
                 var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
-
+                await transaction.CommitAsync(cancellationToken);
                 return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken };
 
             }
             catch(Exception)
             {
-                await _identityService.DeleteUserAsync(userId, cancellationToken);
+                await transaction.RollbackAsync(cancellationToken);
                 return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
             }
 

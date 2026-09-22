@@ -369,7 +369,7 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("DepartmentId")
+                    b.Property<Guid?>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("FullName")
@@ -1228,8 +1228,7 @@ namespace PulseID.Infrastructure.Migrations
                     b.HasOne("PulseID.Domain.Entities.Department", "Department")
                         .WithMany("Doctors")
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()

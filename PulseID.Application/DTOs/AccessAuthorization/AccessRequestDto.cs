@@ -19,5 +19,7 @@ namespace PulseID.Application.DTOs.AccessAuthorization
         public DateTime RequestedAt { get; set; }
         public DateTime? RespondedAt { get; set; }
         public DateTime? ExpiresAt { get; set; }
+        // Temporary while development
+        public string? Otp { get; set; } = default!;
     }
 }

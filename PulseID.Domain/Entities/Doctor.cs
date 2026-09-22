@@ -26,14 +26,14 @@ namespace PulseID.Domain.Entities
 
         public Guid? ApprovedByHospitalAdminId { get; private set; } 
         public DateTime? ApprovedAt { get; private set; }
-        public Guid DepartmentId { get; private set; }
-        public Department Department { get; private set; } = default!;
+        public Guid? DepartmentId { get; private set; }
+        public Department? Department { get; private set; } = default!;
 
 
         Doctor() { }
 
         public Doctor(Guid userId, string fullName, string syndicateNumber, string syndicateDocumentPath, string nationalId, 
-            string specialization, string phoneNumber, Guid departmentId, string? personalImagePath = null)
+            string specialization, string phoneNumber, Guid? departmentId = null, string? personalImagePath = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is Required", nameof(userId));

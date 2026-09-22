@@ -19,7 +19,7 @@ namespace PulseID.Application.DTOs.Doctor
         public string PhoneNumber { get; set; } = default!;
         public string? PersonalImagePath { get; set; }
         public DoctorStatus Status { get; set; }
-        public Guid DepartmentId { get; set; }
+        public Guid? DepartmentId { get; set; }
         public string? DepartmentName { get; set; } 
         public Guid? ApprovedByHospitalAdminId { get; set; }
         public DateTime? ApprovedAt { get; set; }
