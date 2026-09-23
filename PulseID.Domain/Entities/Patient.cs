@@ -46,7 +46,8 @@ namespace PulseID.Domain.Entities
         readonly List<MedicalFile> _files = new List<MedicalFile>();
         public IReadOnlyCollection<MedicalFile> MedicalFiles => _files.AsReadOnly();
 
-
+        readonly List<LabTestRequest> _labTestRequests = new List<LabTestRequest>();
+        public IReadOnlyCollection<LabTestRequest> LabTestRequests => _labTestRequests.AsReadOnly();
 
         // ================================== < Constructors Section > =================================
 
@@ -75,7 +76,7 @@ namespace PulseID.Domain.Entities
             BloodType = bloodType;
             Address = address;
         }
-        
+
 
 
 

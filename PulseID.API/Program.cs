@@ -7,12 +7,13 @@ using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
 using PulseID.Infrastructure;
 using PulseID.Infrastructure.Persistence;
+using PulseID.Infrastructure.Persistence.Seed;
 
 namespace PulseID.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,17 @@ namespace PulseID.API
 
             var app = builder.Build();
 
+
+            // Seed database.
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                var csvPath = Path.Combine(AppContext.BaseDirectory, "medications.csv");
+
+                await MedicationsSeeder.SeedAsync(context, csvPath);
+            }
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -51,7 +63,7 @@ namespace PulseID.API
 
 
             app.MapControllers();
-            
+
             app.Run();
         }
     }

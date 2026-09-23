@@ -1,0 +1,28 @@
+using PulseID.Application.DTOs.Labs;
+
+namespace PulseID.Application.Interfaces.Services;
+
+public interface ILabTechnicianService
+{
+    Task<IReadOnlyList<LabTechnicianDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    Task<LabTechnicianDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LabTechnicianDto>> GetByLabAsync(Guid labId, CancellationToken cancellationToken = default);
+
+    Task<LabTechnicianDto> CreateAsync(CreateLabTechnicianDto dto, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(Guid id, UpdateLabTechnicianDto dto, CancellationToken cancellationToken = default);
+
+    Task TransferToLabAsync(Guid id, Guid labId, CancellationToken cancellationToken = default);
+
+    Task ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
+
+    Task RejectAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+}

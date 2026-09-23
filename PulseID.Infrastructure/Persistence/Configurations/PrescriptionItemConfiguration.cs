@@ -19,12 +19,15 @@ namespace PulseID.Infrastructure.Persistence.Configurations
             builder.HasIndex(i => i.PrescriptionId);
             builder.HasIndex(i => i.DispensedByPharmacistId);
 
-            builder.Property(i => i.MedicationCode).IsRequired();
-            builder.Property(i => i.MedicationName).IsRequired().HasMaxLength(250);
+            builder.HasOne(pi => pi.Medication)
+                .WithMany(m => m.PrescriptionItems)
+                .HasForeignKey(pi => pi.MedicationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.Property(i => i.Dosage).IsRequired();
             builder.Property(i => i.Instructions).HasMaxLength(1000);
 
-            builder.HasOne(i => i.DispensedbyPharmacist)
+            builder.HasOne(i => i.DispensedByPharmacist)
                 .WithMany(ph => ph.PrescriptionItems)
                 .HasForeignKey(i => i.DispensedByPharmacistId)
                 .IsRequired(false)
