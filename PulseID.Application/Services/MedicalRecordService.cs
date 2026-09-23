@@ -132,8 +132,9 @@ namespace PulseID.Application.Services
 
             var currentVersion = await _unitOfWork.MedicalRecords.GetByIdAsync(currentVersionId, cancellationToken) 
                 ?? throw new NotFoundException(nameof(MedicalRecord), currentVersionId);
-
-            await _accessValicationService.EnsureAccessAsync(currentVersion.Patient, doctor.UserId, AccessScope.FullMedicalRecord, cancellationToken);
+            var patient = await _unitOfWork.Patients.GetByIdAsync(currentVersion.PatientId, cancellationToken)
+                ?? throw new NotFoundException(nameof(Patient), currentVersion.PatientId);
+            await _accessValicationService.EnsureAccessAsync(patient, doctor.UserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             if (doctor.Department is null)
                 throw new BusinessRuleViolationException(
