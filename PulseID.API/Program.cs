@@ -172,7 +172,7 @@ namespace PulseID.API
                 options.AddPolicy("PharmacistOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
                 options.AddPolicy("MedicalRecordOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
             });
-            builder.Services.AddMemoryCache();
+            //builder.Services.AddMemoryCache();
 
 
             builder.Services.AddScoped<IAuthorizationHandler, PatientOwnerOrAdminHandler>();

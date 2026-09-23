@@ -53,7 +53,7 @@ namespace PulseID.Application.Services
             if (!result.Success)
                 throw new BusinessRuleViolationException(result.Message ?? "Failed to send OTP to the patient.");
 
-            return ToDto(accessRequest);
+            return ToDto(accessRequest, result.Otp);
 
 
         }
@@ -84,7 +84,7 @@ namespace PulseID.Application.Services
             _unitOfWork.AccessAuthorizations.Update(accessRequest);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return ToDto(accessRequest);
+            return ToDto(accessRequest, dto.Otp);
 
         }
 
@@ -104,7 +104,7 @@ namespace PulseID.Application.Services
 
         }
 
-        static AccessRequestDto ToDto(AccessAuthorization access) => new()
+        static AccessRequestDto ToDto(AccessAuthorization access, string rawOtpCode) => new()
         {
             Id = access.Id,
             PatientId = access.PatientId,
@@ -115,7 +115,8 @@ namespace PulseID.Application.Services
             RequestedDurationMinutes = access.RequestedDurationMinutes,
             RequestedAt = access.RequestedAt,
             RespondedAt = access.RespondedAt,
-            ExpiresAt = access.ExpiresAt
+            ExpiresAt = access.ExpiresAt,
+            Otp = rawOtpCode
         };
 
 

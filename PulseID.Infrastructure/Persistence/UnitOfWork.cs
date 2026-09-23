@@ -1,4 +1,5 @@
-﻿using PulseID.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore.Storage;
+using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.Repositories;
 using PulseID.Infrastructure.Persistence.Repositories;
 using System;
@@ -56,6 +57,12 @@ namespace PulseID.Infrastructure.Persistence
             => _context.AddAsync(entity, cancellationToken).AsTask();
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => _context.SaveChangesAsync(cancellationToken);
+
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Database.BeginTransactionAsync(cancellationToken);
+        }
 
         public void Dispose()
         {

@@ -52,14 +52,11 @@ namespace PulseID.Application.Services
             UpdatedAt = record.UpdatedAt
         };
 
-        async Task EnsureCanAccessPatientRecordAsync(Guid patientId, CancellationToken cancellationToken = default)
+        async Task EnsureCanAccessPatientRecordAsync(Patient patient, CancellationToken cancellationToken = default)
         {
             var currentUserId = RequireCurrentUserId();
-
-            var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
-            if (patient is not null && patient.UserId == currentUserId) return;
             
-            await _accessValicationService.EnsureAccessAsync(patientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValicationService.EnsureAccessAsync(patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
         }
 
         async Task EnsureCanAccessRecordAsync(MedicalRecord record, CancellationToken cancellationToken)
@@ -74,7 +71,7 @@ namespace PulseID.Application.Services
             if (doctor is not null && doctor.Id == record.DoctorId)
                 return;
 
-            await _accessValicationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValicationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
         }
 
         static MedicalRecordListItemDto ToListItemDto(MedicalRecord record) => new()

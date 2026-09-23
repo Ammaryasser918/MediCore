@@ -18,7 +18,7 @@ namespace PulseID.Application.DTOs.Auth
         public string SyndicateDocumentPath { get; set; } = default!;
         public string Specialization { get; set; } = default!;
         public string PhoneNumber { get; set; } = default!;
-        public Guid DepartmentId { get; set; }
+        //public Guid DepartmentId { get; set; }
         public string? PersonalImagePath { get; set; }
     }
 }
