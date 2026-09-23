@@ -215,6 +215,8 @@ namespace PulseID.API
 
             app.UseGlobalExceptionHandling();
             app.UseHttpsRedirection();
+            app.UseCors("PulseIDApiCorsPolicy");
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
