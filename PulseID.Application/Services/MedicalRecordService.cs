@@ -36,7 +36,7 @@ namespace PulseID.Application.Services
                 ?? throw new NotFoundException(nameof(Patient), dto.PatientId);
 
 
-            await EnsureCanAccessPatientRecordAsync(dto.PatientId, cancellationToken);
+            await EnsureCanAccessPatientRecordAsync(patient, cancellationToken);
 
 
             if (doctor.Department is null)
@@ -80,12 +80,7 @@ namespace PulseID.Application.Services
             var currentUserId = RequireCurrentUserId();
 
 
-            bool isPatient = (patient.UserId == currentUserId);
-
-            if (!isPatient)
-            {
-                await EnsureCanAccessPatientRecordAsync(patientId, cancellationToken);
-            }
+            await EnsureCanAccessPatientRecordAsync(patient, cancellationToken);
 
             var records = await _unitOfWork.MedicalRecords.GetByPatientAsync(patientId, cancellationToken);
 
@@ -100,7 +95,7 @@ namespace PulseID.Application.Services
         public async Task<IReadOnlyList<MedicalRecordVersionDto>> GetVersionHistoryAsync(Guid anyVersionId, CancellationToken cancellationToken = default)
         {
             var reference = await _unitOfWork.MedicalRecords.GetByIdAsync(anyVersionId, cancellationToken) ?? throw new NotFoundException(nameof(MedicalRecord), anyVersionId);
-            await EnsureCanAccessRecordAsync(reference, cancellationToken);
+            await EnsureCanAccessPatientRecordAsync(reference.Patient, cancellationToken);
 
             var latest = await _unitOfWork.MedicalRecords.GetLatestVersionAsync(reference.RootRecordId, cancellationToken) ?? reference;
 
@@ -138,7 +133,7 @@ namespace PulseID.Application.Services
             var currentVersion = await _unitOfWork.MedicalRecords.GetByIdAsync(currentVersionId, cancellationToken) 
                 ?? throw new NotFoundException(nameof(MedicalRecord), currentVersionId);
 
-            await _accessValicationService.EnsureAccessAsync(currentVersion.PatientId, doctor.UserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValicationService.EnsureAccessAsync(currentVersion.Patient, doctor.UserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             if (doctor.Department is null)
                 throw new BusinessRuleViolationException(

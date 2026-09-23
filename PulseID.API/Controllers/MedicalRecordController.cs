@@ -56,7 +56,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/patient/{patientId}?latestOnly=true
-        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize]
         [HttpGet("patient/{patientId:guid}")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -68,8 +68,8 @@ namespace PulseID.API.Controllers
             var patient = await _patientService.GetByIdAsync(patientId, cancellationToken);
             if (patient is null) return NotFound("Patient not found.");
 
-            var authResult = await _authorizationService.AuthorizeAsync(User, patient, "MedicalRecordOwnerOrAdmin");
-            if (!authResult.Succeeded) return Forbid();
+            //var authResult = await _authorizationService.AuthorizeAsync(User, patient, "MedicalRecordOwnerOrAdmin");
+            //if (!authResult.Succeeded) return Forbid();
 
             var records = await _medicalRecordService.GetByPatientAsync(patientId, latestOnly, cancellationToken);
             return Ok(records);

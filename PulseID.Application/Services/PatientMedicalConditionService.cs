@@ -40,7 +40,7 @@ namespace PulseID.Application.Services
 
             if (patient.Id != currentuserId)
             {
-                await _accessValidationService.EnsureAccessAsync(patientId, currentuserId, Domain.Enums.AccessScope.FullMedicalRecord, cancellationToken);
+                await _accessValidationService.EnsureAccessAsync(patient, currentuserId, Domain.Enums.AccessScope.FullMedicalRecord, cancellationToken);
             }
             return patient;
         }

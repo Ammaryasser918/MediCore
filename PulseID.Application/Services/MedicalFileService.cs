@@ -72,7 +72,7 @@ namespace PulseID.Application.Services
 
             var currentUserId = RequireCurrentUserId();
 
-            await _accessValidationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             return record.MedicalFiles.Select(MedicalRecordService.ToFileDto).ToList();
 
@@ -102,7 +102,7 @@ namespace PulseID.Application.Services
                 ?? throw new NotFoundException(nameof(MedicalRecord), medicalRecordId);
 
             var currentUserId = RequireCurrentUserId();
-            await _accessValidationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             string filePath = await _uploadFileService.SaveToUploadsFolder(file, cancellationToken);
 
@@ -126,7 +126,7 @@ namespace PulseID.Application.Services
 
             var currentUserId = RequireCurrentUserId();
 
-            await _accessValidationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             var file = record.MedicalFiles.FirstOrDefault(f => f.Id == fileId) ?? throw new NotFoundException(nameof(MedicalFile), fileId);
 
@@ -151,7 +151,7 @@ namespace PulseID.Application.Services
 
             var currentUserId = RequireCurrentUserId();
 
-            await _accessValidationService.EnsureAccessAsync(record.PatientId, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
+            await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
             var file = record.MedicalFiles.FirstOrDefault(f => f.Id == fileId && !f.IsDeleted)
                 ?? throw new NotFoundException(nameof(MedicalFile), fileId);

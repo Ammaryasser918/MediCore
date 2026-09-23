@@ -8,6 +8,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using PulseID.Domain.Entities;
 
 namespace PulseID.Application.Services
 {
@@ -19,24 +20,22 @@ namespace PulseID.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<bool> HasAccessAsync(Guid patientId, Guid requesterId, AccessScope requiredScope, CancellationToken cancellationToken = default)
+        public async Task<bool> HasAccessAsync(Patient patient, Guid requesterId, AccessScope requiredScope, CancellationToken cancellationToken = default)
         {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
-            if (patient is null) return false;
 
             if (patient.UserId == requesterId)
                 return true;
 
-            var authorization = await _unitOfWork.AccessAuthorizations.GetActiveAuthorizationAsync(patientId, requesterId, cancellationToken);
+            var authorization = await _unitOfWork.AccessAuthorizations.GetActiveAuthorizationAsync(patient.Id, requesterId, cancellationToken);
 
             if (authorization is null || !authorization.IsValidNow()) return false;
 
             return (authorization.Scope == AccessScope.FullMedicalRecord) || (authorization.Scope == requiredScope);
         }
 
-        public async Task EnsureAccessAsync(Guid patientId, Guid requesterId, AccessScope requiredScope, CancellationToken cancellationToken = default)
+        public async Task EnsureAccessAsync(Patient patient, Guid requesterId, AccessScope requiredScope, CancellationToken cancellationToken = default)
         {
-            if (!await HasAccessAsync(patientId, requesterId, requiredScope, cancellationToken))
+            if (!await HasAccessAsync(patient, requesterId, requiredScope, cancellationToken))
                 throw new ForbiddenAccessException("You don't have an approved authorization to this patient's medical record");
         }
 
