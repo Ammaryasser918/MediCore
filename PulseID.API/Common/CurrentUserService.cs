@@ -19,7 +19,7 @@ namespace PulseID.API.Common
 
                 // Prefer a real JWT claim once authentication is wired up.
                 var userIdValue = httpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                    ?? httpContext?.Request.Headers["X-User-Id"].FirstOrDefault();
+                    ?? httpContext?.User?.FindFirst("sub")?.Value;
 
                 return Guid.TryParse(userIdValue, out var userId) ? userId : null;
             }
@@ -30,8 +30,7 @@ namespace PulseID.API.Common
             {
                 var httpContext = _httpContextAccessor.HttpContext;
 
-                return httpContext?.User?.FindFirst(ClaimTypes.Role)?.Value
-                    ?? httpContext?.Request.Headers["X-User-Role"].FirstOrDefault();
+                return httpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
             }
         }
     }
