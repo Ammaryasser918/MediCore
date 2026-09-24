@@ -38,7 +38,7 @@ namespace PulseID.Application.Services
 
             var currentuserId = RequireCurrentUserId();
 
-            if (patient.Id != currentuserId)
+            if (patient.UserId != currentuserId)
             {
                 await _accessValidationService.EnsureAccessAsync(patient, currentuserId, Domain.Enums.AccessScope.FullMedicalRecord, cancellationToken);
             }
