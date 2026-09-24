@@ -9,7 +9,8 @@ namespace PulseID.Application.DTOs.Patient
 {
     public class CreatePatientDto
     {
-        public Guid UserId { get; set; }
+        public string Email { get; set; } = default!;
+        public string Password { get; set; } = default!;
         public string NationalId { get; set; } = default!;
         public string FullName { get; set; } = default!;
         public DateTime DateOfBirth { get; set; } 

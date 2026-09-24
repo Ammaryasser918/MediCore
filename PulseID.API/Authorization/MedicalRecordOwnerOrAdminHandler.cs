@@ -28,8 +28,8 @@ namespace PulseID.API.Authorization
 
             var currentUserId = _currentUserService.UserId;
             if (currentUserId is null) return;
-            var currentPatient = await _patientService.GetByIdAsync(resource.PatientId);
-            if (currentPatient is not null && (currentUserId == currentPatient.UserId))
+            var currentPatient = await _patientService.GetByUserIdAsync(currentUserId.Value);
+            if (currentPatient is not null && (resource.PatientId == currentPatient.Id))
             {
                 context.Succeed(requirement);
             }

@@ -1,11 +1,14 @@
 ﻿using PulseID.Application.Common.Exceptions;
+using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,16 +17,18 @@ namespace PulseID.Application.Services
     public class PatientService : IPatientService
     {
         readonly IUnitOfWork _unitOfWork;
-        public PatientService(IUnitOfWork unitOfWork)
+        readonly IIdentityService _identityService;
+        public PatientService(IUnitOfWork unitOfWork, IIdentityService identityService)
         {
             _unitOfWork = unitOfWork;
+            _identityService = identityService;
         }
 
-        static PatientDto ToDto(Patient patient)
+        static PatientDto ToDto(Patient patient, string email)
             => new()
             {
                 Id = patient.Id,
-                UserId = patient.UserId,
+                Email = email,
                 NationalId = patient.NationalId,
                 FullName = patient.FullName,
                 DateOfBirth = patient.DateOfBirth,
@@ -43,19 +48,35 @@ namespace PulseID.Application.Services
         public async Task<IReadOnlyList<PatientDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var patients = await _unitOfWork.Patients.GetAllAsync(cancellationToken);
-            return patients.Select(ToDto).ToList();
+            var patientDtos = new List<PatientDto>();
+            foreach(var patient in patients)
+            {
+                var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+                patientDtos.Add(ToDto(patient, email));
+            }
+            return patientDtos;
         }
 
         public async Task<PatientDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
-            return ToDto(patient);
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
         }
+        public async Task<PatientDto> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var patient = await _unitOfWork.Patients.GetByUserIdAsync(userId, cancellationToken) ?? throw new NotFoundException(nameof(Patient), userId);
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
+        }
+
 
         public async Task<PatientDto?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default)
         {
             var patient = await _unitOfWork.Patients.GetByNationalIdAsync(nationalId, cancellationToken);
-            return patient is null ? null : ToDto(patient);
+            if (patient is null) throw new NotFoundException($"Patient with national Id '{nationalId}' not found.");
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
         }
 
         public async Task<PatientDto> CreateAsync(CreatePatientDto patientDto, CancellationToken cancellationToken = default)
@@ -63,8 +84,10 @@ namespace PulseID.Application.Services
             if (await _unitOfWork.Patients.ExistsByNationalIdAsync(patientDto.NationalId, cancellationToken))
                 throw new DuplicateEntityException($"A patient with National Id '{patientDto.NationalId}' already exists.");
 
+            var (succeeded, userId, error) = await _identityService.CreateUserAsync(patientDto.Email, patientDto.Password, AppRoles.Patient, cancellationToken);
+
             var patient = new Patient(
-                patientDto.UserId,
+                userId,
                 patientDto.NationalId,
                 patientDto.FullName,
                 patientDto.DateOfBirth,
@@ -76,7 +99,7 @@ namespace PulseID.Application.Services
 
             await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return ToDto(patient);
+            return ToDto(patient, patientDto.Email);
         }
 
         public async Task<PatientDto> UpdateAsync(Guid id, UpdatePatientDto patientDto, CancellationToken cancellationToken = default)
@@ -89,8 +112,8 @@ namespace PulseID.Application.Services
 
             _unitOfWork.Patients.Update(patient);
             await _unitOfWork.SaveChangesAsync();
-
-            return ToDto(patient);
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
 
         }
 

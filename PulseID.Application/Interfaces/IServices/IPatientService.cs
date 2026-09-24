@@ -11,6 +11,7 @@ namespace PulseID.Application.Interfaces.IServices
     {
         Task<IReadOnlyList<PatientDto>> GetAllAsync(CancellationToken cancellationToken = default);
         Task<PatientDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<PatientDto> GetByUserIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<PatientDto?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
         Task<PatientDto> CreateAsync(CreatePatientDto patientDto, CancellationToken cancellationToken = default);
         Task<PatientDto> UpdateAsync(Guid id, UpdatePatientDto patientDto, CancellationToken cancellationToken = default);
