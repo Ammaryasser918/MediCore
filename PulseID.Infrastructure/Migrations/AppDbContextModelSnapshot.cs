@@ -527,6 +527,37 @@ namespace PulseID.Infrastructure.Migrations
                     b.ToTable("Hospitals", (string)null);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.HospitalAdmin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("HospitalId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HospitalId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("HospitalAdmins", (string)null);
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.MedicalFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -966,6 +997,37 @@ namespace PulseID.Infrastructure.Migrations
                     b.ToTable("Pharmacies", (string)null);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.PharmacyAdmin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("PharmacyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PharmacyId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("PharmacyAdmins", (string)null);
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Prescription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1258,6 +1320,17 @@ namespace PulseID.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.HospitalAdmin", b =>
+                {
+                    b.HasOne("PulseID.Domain.Entities.Hospital", "Hospital")
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Hospital");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.MedicalFile", b =>
                 {
                     b.HasOne("PulseID.Domain.Entities.MedicalRecord", "MedicalRecord")
@@ -1409,6 +1482,17 @@ namespace PulseID.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Hospital");
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.PharmacyAdmin", b =>
+                {
+                    b.HasOne("PulseID.Domain.Entities.Pharmacy", "Pharmacy")
+                        .WithMany()
+                        .HasForeignKey("PharmacyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Pharmacy");
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.Prescription", b =>

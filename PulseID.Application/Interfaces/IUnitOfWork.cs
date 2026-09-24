@@ -25,6 +25,8 @@ namespace PulseID.Application.Interfaces
         INotificationRepository Notifications { get; }
         IAllergyRepository Allergies { get; }
         IChronicDiseaseRepository ChronicDiseases { get; }
+        IHospitalAdminRepository HospitalAdmin { get; }
+        IPharmacyAdminRepository PharmacyAdmin { get; }
 
         Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : BaseEntity;
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

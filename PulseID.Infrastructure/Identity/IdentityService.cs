@@ -10,7 +10,7 @@ using PulseID.Application.Common.Interfaces;
 
 namespace PulseID.Infrastructure.Identity
 {
-    public class IdentityService : IIdentityService
+    public partial class IdentityService : IIdentityService
     {
         readonly UserManager<ApplicationUser> _userManager;
         private const string ProviderName = "PulseIDApp";

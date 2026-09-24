@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Pharmacy;
 using PulseID.Application.Interfaces.IServices;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers
 {
@@ -80,8 +81,12 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<ActionResult<PharmacyDto>> Approve(Guid id, [FromQuery] Guid adminId, CancellationToken cancellationToken)
+        public async Task<ActionResult<PharmacyDto>> Approve(Guid id, CancellationToken cancellationToken)
         {
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var adminId))
+                return Unauthorized("Can't identify the current admin user.");
+
             var updated = await _pharmacyService.ApproveAsync(id, adminId, cancellationToken);
             return Ok(updated);
         }

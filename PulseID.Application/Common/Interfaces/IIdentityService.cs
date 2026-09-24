@@ -1,4 +1,6 @@
 ﻿using PulseID.Application.DTOs.Auth;
+using PulseID.Application.DTOs.HospitalAdmin;
+using PulseID.Application.DTOs.PharmacyAdmin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +23,12 @@ namespace PulseID.Application.Common.Interfaces
         Task SaveRefreshTokenAsync(Guid userId, string refreshToken, DateTime expiresOn, CancellationToken cancellationToken = default);
         Task<bool> ValidateRefreshTokenAsync(Guid userId, string refreshToken, CancellationToken cancellationToken = default);
         Task RevokeRefreshTokenAsync(Guid userId, CancellationToken cancellationToken = default);
+
+
+
+        // Admins
+        Task<Guid> CreateHospitalAdminAsync(CreateHospitalAdminDto dto, CancellationToken cancellationToken = default);
+        Task<Guid> CreatePharmacyAdminAsync(CreatePharmacyAdminDto dto, CancellationToken cancellationToken = default);
 
     }
 }

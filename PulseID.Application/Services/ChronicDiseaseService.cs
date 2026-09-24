@@ -3,6 +3,7 @@ using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.ChronicDiseases;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -53,12 +54,25 @@ namespace PulseID.Application.Services
         {
 
             var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+            var isAdmin = false;
+            if (_currentUserService.Role == AppRoles.SuperAdmin || _currentUserService.Role == AppRoles.HospitalAdmin)
+                isAdmin = true;
+            if (!isAdmin)
+            {
+                if (_currentUserService.Role == AppRoles.Doctor)
+                {
+                    var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken)
+                        ?? throw new NotFoundException(nameof(Doctor), currentUserId);
 
-            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken)
-                ?? throw new NotFoundException(nameof(Doctor), currentUserId);
-
-            if (doctor.Status != Domain.Enums.DoctorStatus.Approved)
-                throw new ForbiddenAccessException("Only an approved doctor can add a new chronic disease to the catalog.");
+                    if (doctor.Status != Domain.Enums.DoctorStatus.Approved)
+                        throw new ForbiddenAccessException("Only an approved doctor can add a new chronic disease to the catalog.");
+                }
+                else
+                {
+                    throw new ForbiddenAccessException("Only an approved doctor can add a new chronic disease to the catalog");
+                }
+            }
+            
 
             if (await _unitOfWork.ChronicDiseases.GetByNameAsync(dto.Name, cancellationToken) is not null)
                 throw new DuplicateEntityException($"A chronic disease with the name '{dto.Name}' already exists.");

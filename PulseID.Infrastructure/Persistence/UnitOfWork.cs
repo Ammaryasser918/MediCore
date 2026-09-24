@@ -28,6 +28,8 @@ namespace PulseID.Infrastructure.Persistence
         INotificationRepository? _notifications;
         IAllergyRepository? _allergies;
         IChronicDiseaseRepository? _chronicDiseases;
+        IHospitalAdminRepository? _hospitalAdmin;
+        IPharmacyAdminRepository? _pharmacyAdmin;
 
 
         public UnitOfWork(AppDbContext context)
@@ -51,6 +53,8 @@ namespace PulseID.Infrastructure.Persistence
         public INotificationRepository Notifications => _notifications ??= new NotificationRepository(_context);
         public IAllergyRepository Allergies => _allergies ??= new AllergyRepository(_context);
         public IChronicDiseaseRepository ChronicDiseases => _chronicDiseases ??= new ChronicDiseaseRepository(_context);
+        public IHospitalAdminRepository HospitalAdmin => _hospitalAdmin ??= new HospitalAdminRepository(_context);
+        public IPharmacyAdminRepository PharmacyAdmin => _pharmacyAdmin ??= new PharmaicyAdminRepository(_context);
 
 
         public Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : PulseID.Domain.Common.BaseEntity

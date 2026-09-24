@@ -27,6 +27,8 @@ namespace PulseID.Application
             services.AddScoped<IChronicDiseaseService, ChronicDiseaseService>();
             services.AddScoped<IPatientMedicalConditionService, PatientMedicalConditionService>();
             services.AddScoped<IOTPService, OTPService>();
+            services.AddScoped<IPharmacyAdminService, PharmacyAdminService>();
+            services.AddScoped<IHospitalAdminService, HospitalAdminService>();
 
 
             return services;

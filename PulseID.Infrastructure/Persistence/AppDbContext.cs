@@ -36,6 +36,8 @@ namespace PulseID.Infrastructure.Persistence
         public DbSet<EmergencyContact> EmergencyContacts => Set<EmergencyContact>();
         public DbSet<PatientAllergy> PatientAllergies => Set<PatientAllergy>();
         public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
+        public DbSet<HospitalAdmin> HospitalAdmins => Set<HospitalAdmin>();
+        public DbSet<PharmacyAdmin> PharmacyAdmin => Set<PharmacyAdmin>();
 
 
         protected override void OnModelCreating(ModelBuilder builder)

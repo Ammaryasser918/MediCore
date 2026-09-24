@@ -13,12 +13,14 @@ using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using PulseID.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace PulseID.API
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -202,8 +204,25 @@ namespace PulseID.API
 
             var app = builder.Build();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+                    var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
-            app.UseSwagger();
+                    await IdentityDataSeeder.SeedSuperAdminAsync(userManager, roleManager);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while seeding the SuperAdmin user.");
+                }
+            }
+
+
+                app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "PulseID API v1");
