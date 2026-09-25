@@ -20,9 +20,9 @@ namespace PulseID.Application.Interfaces.IServices
 
         // Approval Work Flow
         Task<DoctorDto> ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
-        Task<DoctorDto> RejectAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<DoctorDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<DoctorDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<DoctorDto> RejectAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
+        Task<DoctorDto> DeactivateAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
+        Task<DoctorDto> ReactivateAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
 
     }
 }

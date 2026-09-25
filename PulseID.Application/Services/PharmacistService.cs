@@ -35,7 +35,9 @@ namespace PulseID.Application.Services
                         ApprovedByAdminId = pharmacist.ApprovedByAdminId,
                         ApprovedAt = pharmacist.ApprovedAt,
                         CreatedAt = pharmacist.CreatedAt,
-                        UpdatedAt = pharmacist.UpdatedAt
+                        UpdatedAt = pharmacist.UpdatedAt,
+                        RejectedByAdminId = pharmacist.RejectedByAdminId,
+                        RejectedAt = pharmacist.RejectedAt
                     };
 
 
@@ -122,27 +124,27 @@ namespace PulseID.Application.Services
 
         }
 
-        public async Task<PharmacistDto> RejectAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacistDto> RejectAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
         {
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
-            pharmacist.Reject();
+            pharmacist.Reject(pharmacyAdminId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(pharmacist);
         }
 
-        public async Task<PharmacistDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacistDto> DeactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
         {
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
-            pharmacist.Deactivate();
+            pharmacist.Deactivate(pharmacyAdminId);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(pharmacist);
         }
 
-        public async Task<PharmacistDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacistDto> ReactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
         {
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
-            pharmacist.Reactivate();
+            pharmacist.Reactivate(pharmacyAdminId);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(pharmacist);

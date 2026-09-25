@@ -35,7 +35,9 @@ namespace PulseID.Application.Services
             ApprovedByAdminId = pharmacy.ApprovedByAdminId,
             ApprovedAt = pharmacy.ApprovedAt,
             CreatedAt = pharmacy.CreatedAt,
-            UpdatedAt = pharmacy.UpdatedAt
+            UpdatedAt = pharmacy.UpdatedAt,
+            RejectedAt = pharmacy.RejectedAt,
+            RejectedByAdminId = pharmacy.RejectedByAdminId
         };
 
         public async Task<IReadOnlyList<PharmacyDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -98,23 +100,23 @@ namespace PulseID.Application.Services
         }
 
 
-        public async Task<PharmacyDto> RejectAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacyDto> RejectAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
         {
             var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacy), id);
-            pharmacy.Reject();
+            pharmacy.Reject(adminId);
             _unitOfWork.Pharmacies.Update(pharmacy);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(pharmacy);
         }
 
-        public async Task<PharmacyDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacyDto> DeactivateAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
         {
             var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacy), id);
-            pharmacy.Deactivate();
+            pharmacy.Deactivate(adminId);
             var pharmacists = await _unitOfWork.Pharmacists.GetByPharmacyIdAsync(id, cancellationToken);
             foreach (var pharmacist in pharmacists)
             {
-                pharmacist.Deactivate();
+                pharmacist.Deactivate(adminId);
                 _unitOfWork.Pharmacists.Update(pharmacist);
             }
             _unitOfWork.Pharmacies.Update(pharmacy);
@@ -124,14 +126,14 @@ namespace PulseID.Application.Services
 
 
 
-        public async Task<PharmacyDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PharmacyDto> ReactivateAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
         {
             var pharmacy = await _unitOfWork.Pharmacies.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacy), id);
-            pharmacy.Reactivate();
+            pharmacy.Reactivate(adminId);
             var pharmacists = await _unitOfWork.Pharmacists.GetByPharmacyIdAsync(id, cancellationToken);
             foreach (var pharmacist in pharmacists)
             {
-                pharmacist.Reactivate();
+                pharmacist.Reactivate(adminId);
                 _unitOfWork.Pharmacists.Update(pharmacist);
             }
             _unitOfWork.Pharmacies.Update(pharmacy);

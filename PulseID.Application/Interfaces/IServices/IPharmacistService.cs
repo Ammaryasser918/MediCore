@@ -1,4 +1,5 @@
 ﻿using PulseID.Application.DTOs.Pharmacist;
+using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +19,9 @@ namespace PulseID.Application.Interfaces.IServices
 
 
         Task<PharmacistDto> ApproveAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
-        Task<PharmacistDto> RejectAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<PharmacistDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<PharmacistDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<PharmacistDto> RejectAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
+        Task<PharmacistDto> DeactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
+        Task<PharmacistDto> ReactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
 
 
     }

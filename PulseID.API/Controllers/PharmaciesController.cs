@@ -102,7 +102,11 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Reject(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacyService.RejectAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var adminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacyService.RejectAsync(id, adminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -117,7 +121,11 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Deactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacyService.DeactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var adminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacyService.DeactivateAsync(id, adminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -132,7 +140,11 @@ namespace PulseID.API.Controllers
         [Authorize(Roles = "SuperAdmin")]
         public async Task<ActionResult<PharmacyDto>> Reactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacyService.ReactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var adminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacyService.ReactivateAsync(id, adminId, cancellationToken);
             return Ok(updated);
         }
         

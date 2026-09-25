@@ -27,6 +27,9 @@ namespace PulseID.Application.DTOs.Pharmacy
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
+        public DateTime? RejectedAt { get; set; }
+        public Guid? RejectedByAdminId { get; set; }
+
 
     }
 }

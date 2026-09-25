@@ -26,6 +26,10 @@ namespace PulseID.Domain.Entities
 
         public Guid? ApprovedByHospitalAdminId { get; private set; } 
         public DateTime? ApprovedAt { get; private set; }
+
+        public Guid? RejectedByAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set;  }
+
         public Guid? DepartmentId { get; private set; }
         public Department? Department { get; private set; } = default!;
 
@@ -65,9 +69,9 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void Approve(Guid hospitalAdminId)
+        public void Approve(Guid adminId)
         {
-            if (hospitalAdminId == Guid.Empty)
+            if (adminId == Guid.Empty)
                 throw new ArgumentException("Hospital admin Id is required to approve a doctor.");
             if (ApprovedByHospitalAdminId.HasValue)
                 throw new BusinessRuleViolationException("This doctor is already approved");
@@ -75,31 +79,40 @@ namespace PulseID.Domain.Entities
             if (string.IsNullOrWhiteSpace(SyndicateNumber) && string.IsNullOrWhiteSpace(SyndicateDocumentPath))
                 throw new BusinessRuleViolationException("Can't approve a doctor without syndicate details.");
 
-            ApprovedByHospitalAdminId = hospitalAdminId;
+            ApprovedByHospitalAdminId = adminId;
             ApprovedAt = DateTime.UtcNow;
             Status = DoctorStatus.Approved;
             MarkAsUpdated();
         }
 
-        public void Deactivate()
+        public void Deactivate(Guid adminId)
         {
-            if (Status != DoctorStatus.Approved)
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Hospital admin Id is required to approve a doctor.");
+
+                if (Status != DoctorStatus.Approved)
                 throw new BusinessRuleViolationException("Can only suspend an approved doctor.");
             Status = DoctorStatus.Suspended;
             MarkAsUpdated();
         }
 
-        public void Reactivate()
+        public void Reactivate(Guid adminId)
         {
-            if (Status != DoctorStatus.Suspended)
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Hospital admin Id is required to approve a doctor.");
+
+                if (Status != DoctorStatus.Suspended)
                 throw new BusinessRuleViolationException("Can only reactivate a suspended Doctor.");
             Status = DoctorStatus.Approved;
             MarkAsUpdated();
         }
 
-        public void Reject()
+        public void Reject(Guid adminId)
         {
-            if (Status != DoctorStatus.Pending)
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Hospital admin Id is required to approve a doctor.");
+
+                if (Status != DoctorStatus.Pending)
                 throw new BusinessRuleViolationException("Can only reject pending doctors.");
             Status = DoctorStatus.Rejected;
             MarkAsUpdated();

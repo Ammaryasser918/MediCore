@@ -131,7 +131,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PharmacistDto>> Reject(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacistService.RejectAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var pharmacyAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacistService.RejectAsync(id, pharmacyAdminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -142,7 +146,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PharmacistDto>> Deactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacistService.DeactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var pharmacyAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacistService.DeactivateAsync(id, pharmacyAdminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -153,7 +161,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PharmacistDto>> Reactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _pharmacistService.ReactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var pharmacyAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _pharmacistService.ReactivateAsync(id, pharmacyAdminId, cancellationToken);
             return Ok(updated);
         }
 

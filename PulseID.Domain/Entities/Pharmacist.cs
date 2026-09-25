@@ -22,6 +22,8 @@ namespace PulseID.Domain.Entities
         public Pharmacy Pharmacy { get; private set; } = default!;
         public Guid? ApprovedByAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+        public Guid? RejectedByAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
 
 
         readonly List<PrescriptionItem> _dispensedItems = new List<PrescriptionItem>();
@@ -60,9 +62,9 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void Approve(Guid pharmacyAdminId)
+        public void Approve(Guid adminId)
         {
-            if (pharmacyAdminId == Guid.Empty)
+            if (adminId == Guid.Empty)
                 throw new ArgumentException("Pharmacy admin Id is required to approve a pharmacist.");
             if (ApprovedByAdminId.HasValue)
                 throw new BusinessRuleViolationException("This pharmacist is already approved");
@@ -70,30 +72,39 @@ namespace PulseID.Domain.Entities
             if (string.IsNullOrWhiteSpace(SyndicateNumber) && string.IsNullOrWhiteSpace(SyndicateDocumentPath))
                 throw new BusinessRuleViolationException("Can't approve a pharmacist without syndicate details.");
 
-            ApprovedByAdminId = pharmacyAdminId;
+            ApprovedByAdminId = adminId;
             ApprovedAt = DateTime.UtcNow;
             Status = PharmacistStatus.Approved;
             MarkAsUpdated();
         }
 
-        public void Reject()
+        public void Reject(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Pharmacy admin Id is required to approve a pharmacist.");
+
             if (Status != PharmacistStatus.Pending)
                 throw new BusinessRuleViolationException("Can only reject pending pharmacists.");
             Status = PharmacistStatus.Rejected;
             MarkAsUpdated();
         }
 
-        public void Reactivate()
+        public void Reactivate(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Pharmacy admin Id is required to approve a pharmacist.");
+
             if (Status != PharmacistStatus.Suspended)
                 throw new BusinessRuleViolationException("Can only reactivate a suspended pharmacist.");
             Status = PharmacistStatus.Approved;
             MarkAsUpdated();
         }
         
-        public void Deactivate()
+        public void Deactivate(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Pharmacy admin Id is required to approve a pharmacist.");
+
             if (Status != PharmacistStatus.Approved)
                 throw new BusinessRuleViolationException("Can only suspend an approved pharmacist.");
             Status = PharmacistStatus.Suspended;

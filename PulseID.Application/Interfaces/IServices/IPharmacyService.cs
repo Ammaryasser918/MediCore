@@ -18,9 +18,9 @@ namespace PulseID.Application.Interfaces.IServices
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task<PharmacyDto> ApproveAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
-        Task<PharmacyDto> RejectAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<PharmacyDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<PharmacyDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<PharmacyDto> RejectAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
+        Task<PharmacyDto> DeactivateAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
+        Task<PharmacyDto> ReactivateAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
 
     }
 }

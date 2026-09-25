@@ -36,7 +36,9 @@ namespace PulseID.Application.Services
             ApprovedByHospitalAdminId = doctor.ApprovedByHospitalAdminId,
             ApprovedAt = doctor.ApprovedAt,
             CreatedAt = doctor.CreatedAt,
-            UpdatedAt = doctor.UpdatedAt
+            UpdatedAt = doctor.UpdatedAt,
+            RejectedAt = doctor.RejectedAt,
+            RejectedByAdminId = doctor.RejectedByAdminId
         };
 
         public async Task<IReadOnlyList<DoctorDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -126,28 +128,28 @@ namespace PulseID.Application.Services
         }
 
 
-        public async Task<DoctorDto> RejectAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<DoctorDto> RejectAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.Reject();
+            doctor.Reject(hospitalAdminId);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(doctor);
         }
 
-        public async Task<DoctorDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<DoctorDto> DeactivateAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.Deactivate();
+            doctor.Deactivate(hospitalAdminId);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return ToDto(doctor);
         }
 
-        public async Task<DoctorDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<DoctorDto> ReactivateAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.Reactivate();
+            doctor.Reactivate(hospitalAdminId);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 

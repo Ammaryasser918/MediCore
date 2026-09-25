@@ -144,7 +144,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<DoctorDto>> Reject(Guid id, [FromQuery] UpdateDoctorDepartmentDto dto, CancellationToken cancellationToken)
         {
-            var updated = await _doctorService.RejectAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var hospitalAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _doctorService.RejectAsync(id, hospitalAdminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -156,7 +160,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<DoctorDto>> Deactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _doctorService.DeactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var hospitalAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _doctorService.DeactivateAsync(id, hospitalAdminId, cancellationToken);
             return Ok(updated);
         }
 
@@ -168,7 +176,11 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<DoctorDto>> Reactivate(Guid id, CancellationToken cancellationToken)
         {
-            var updated = await _doctorService.ReactivateAsync(id, cancellationToken);
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(adminIdClaim, out var hospitalAdminId))
+                return Unauthorized("Can't identify the current admin user.");
+
+            var updated = await _doctorService.ReactivateAsync(id, hospitalAdminId, cancellationToken);
             return Ok(updated);
         }
 

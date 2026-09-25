@@ -23,6 +23,9 @@ namespace PulseID.Domain.Entities
 
         public Guid? ApprovedByAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+        public Guid? RejectedByAdminId { get; private set; } 
+        public DateTime? RejectedAt { get; private set; }
+
 
 
 
@@ -76,24 +79,34 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void Reject()
+        public void Reject(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to reject a pharmacy.", nameof(adminId));
+
             if (Status != PharmacyStatus.Pending)
                 throw new BusinessRuleViolationException("Can only reject pending pharmacies.");
             Status = PharmacyStatus.Rejected;
             MarkAsUpdated();
         }
 
-        public void Deactivate()
+        public void Deactivate(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to deactivate a pharmacy.", nameof(adminId));
+
             if (Status != PharmacyStatus.Approved)
                 throw new BusinessRuleViolationException("Can only suspend an approved pharmacy");
             Status = PharmacyStatus.Suspended;
             MarkAsUpdated();
         }
 
-        public void Reactivate()
+        public void Reactivate(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to reactivate a pharmacy.", nameof(adminId));
+
+
             if (Status != PharmacyStatus.Suspended)
                 throw new BusinessRuleViolationException("Can only reactivate a suspended pharmacy.");
             Status = PharmacyStatus.Approved;
