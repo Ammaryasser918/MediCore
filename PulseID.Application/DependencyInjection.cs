@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Interfaces.Repositories;
 using PulseID.Application.Services;
 
 namespace PulseID.Application
@@ -29,6 +30,7 @@ namespace PulseID.Application
             services.AddScoped<IOTPService, OTPService>();
             services.AddScoped<IPharmacyAdminService, PharmacyAdminService>();
             services.AddScoped<IHospitalAdminService, HospitalAdminService>();
+            services.AddScoped<IEmergencyContactService, EmergencyContactService>();
 
 
             return services;

@@ -37,12 +37,16 @@ namespace PulseID.Domain.Entities
         }
 
 
-        public void UpdateDetails(string phoneNumber, string? address)
+        public void UpdateDetails(string fullName, string relation, string phoneNumber, string? address)
         {
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Full Name is Required", nameof(fullName));
             if (string.IsNullOrWhiteSpace(phoneNumber))
             {
                 throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
             }
+            FullName = fullName;
+            Relationship = relation;
             PhoneNumber = phoneNumber;
             Address = address;
             MarkAsUpdated();

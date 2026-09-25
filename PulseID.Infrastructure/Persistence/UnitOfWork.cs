@@ -30,6 +30,7 @@ namespace PulseID.Infrastructure.Persistence
         IChronicDiseaseRepository? _chronicDiseases;
         IHospitalAdminRepository? _hospitalAdmin;
         IPharmacyAdminRepository? _pharmacyAdmin;
+        IEmergencyContactRepository? _emergencyContact;
 
 
         public UnitOfWork(AppDbContext context)
@@ -55,6 +56,7 @@ namespace PulseID.Infrastructure.Persistence
         public IChronicDiseaseRepository ChronicDiseases => _chronicDiseases ??= new ChronicDiseaseRepository(_context);
         public IHospitalAdminRepository HospitalAdmin => _hospitalAdmin ??= new HospitalAdminRepository(_context);
         public IPharmacyAdminRepository PharmacyAdmin => _pharmacyAdmin ??= new PharmaicyAdminRepository(_context);
+        public IEmergencyContactRepository EmergencyContact => _emergencyContact ??= new EmergencyContactRepository(_context);
 
 
         public Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : PulseID.Domain.Common.BaseEntity
