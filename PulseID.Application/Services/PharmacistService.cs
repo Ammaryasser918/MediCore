@@ -68,7 +68,7 @@ namespace PulseID.Application.Services
 
         public async Task<PharmacistDto> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(userId, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), userId);
+            var pharmacist = await _unitOfWork.Pharmacists.GetByUserIdAsync(userId, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), userId);
             var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
             return ToDto(pharmacist, email);
         }
