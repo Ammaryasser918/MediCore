@@ -19,7 +19,7 @@ namespace PulseID.Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<EmergencyContact>> GetByPatientIdAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
-            return await _dbSet.Where(ec => ec.PatientId == patientId).AsNoTracking().ToListAsync(cancellationToken);
+            return await _dbSet.Where(ec => ec.PatientId == patientId && !ec.IsDeleted).AsNoTracking().ToListAsync(cancellationToken);
         }
 
     }

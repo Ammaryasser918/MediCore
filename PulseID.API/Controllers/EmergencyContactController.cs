@@ -51,7 +51,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<ActionResult<EmergencyContactDto>> Create([FromBody] CreateEmergencyContactDto dto, Guid? patientId, CancellationToken cancellationToken)
+        public async Task<ActionResult<EmergencyContactDto>> Create([FromBody] CreateEmergencyContactDto dto,[FromQuery] Guid? patientId, CancellationToken cancellationToken)
         {
             var result = await _emergencyContactService.CreateAsync(dto, patientId, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);

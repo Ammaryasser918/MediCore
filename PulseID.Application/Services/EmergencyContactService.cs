@@ -30,6 +30,7 @@ namespace PulseID.Application.Services
         public async Task<IEnumerable<EmergencyContactDto>> GetPatientContactsAsync(Guid? patientId, CancellationToken cancellationToken = default)
         {
             var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            await ValidateAccessAsync(resolvedPatientId, cancellationToken);
             var contacts = await _unitOfWork.EmergencyContact.GetByPatientIdAsync(resolvedPatientId, cancellationToken);
             return contacts.Select(ToDto);
         }
@@ -46,7 +47,7 @@ namespace PulseID.Application.Services
         public async Task<EmergencyContactDto> CreateAsync(CreateEmergencyContactDto dto, Guid? patientId, CancellationToken cancellationToken = default)
         {
             var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
-
+            await ValidateAccessAsync(resolvedPatientId, cancellationToken);
             var contact = new EmergencyContact(
                 resolvedPatientId,
                 dto.FullName,
@@ -115,7 +116,7 @@ namespace PulseID.Application.Services
             if (_currentUserService.Role == AppRoles.Patient)
             {
                 var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
-                if (patient != null && patient.UserId == _currentUserService.UserId)
+                if (patient != null && (patient.UserId == _currentUserService.UserId))
                     return;
             }
 
