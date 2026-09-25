@@ -54,6 +54,10 @@ namespace PulseID.Domain.Entities
 
         public void Approve()
         {
+            if (Status == AuthorizationStatus.Approved)
+                throw new BusinessRuleViolationException("This request is already Approved.");
+            if (Status == AuthorizationStatus.Rejected)
+                throw new BusinessRuleViolationException("This access request is rejected.");
             if (Status != AuthorizationStatus.Pending)
                 throw new BusinessRuleViolationException("Can only approve access in pending case");
             Status = AuthorizationStatus.Approved;
@@ -88,6 +92,16 @@ namespace PulseID.Domain.Entities
         public bool IsValidNow() =>
         Status == AuthorizationStatus.Approved &&
         (!ExpiresAt.HasValue || ExpiresAt > DateTime.UtcNow);
+
+        public void Reject()
+        {
+            if (Status != AuthorizationStatus.Pending)
+                throw new BusinessRuleViolationException("Can only reject pending access requests.");
+            Status = AuthorizationStatus.Rejected;
+            RespondedAt = DateTime.UtcNow;
+            MarkAsUpdated();
+        }
+
     }
 
 

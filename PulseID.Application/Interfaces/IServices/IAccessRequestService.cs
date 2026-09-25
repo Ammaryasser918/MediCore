@@ -15,5 +15,11 @@ namespace PulseID.Application.Interfaces.IServices
         Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(bool latestOnly = false, CancellationToken cancellationToken = default);
         Task<AccessRequestDto> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default);
 
+        Task RejectAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default);
+
+        Task ApproveAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default);
+
+        Task RevokeAccessRequestAsync(Guid accessRequestId, CancellationToken cancellationToken = default);
+
     }
 }

@@ -119,6 +119,51 @@ namespace PulseID.Application.Services
             return requests.Select(r => ToDto(r));
         }
 
+        public async Task RejectAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default)
+        {
+            var patient = await GetCurrentPatientAsync(cancellationToken);
+            var accessRequest = await _unitOfWork.AccessAuthorizations.GetByIdAsync(requestId, cancellationToken);
+            if (accessRequest is null) throw new NotFoundException($"Access request with ID: '{requestId}' Not found.");
+            if (accessRequest.PatientId != patient.Id)
+                throw new ForbiddenAccessException("You don't have permission to reject this access request.");
+
+            accessRequest.Reject();
+
+            _unitOfWork.AccessAuthorizations.Update(accessRequest);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        }
+
+        public async Task ApproveAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default)
+        {
+            var patient = await GetCurrentPatientAsync(cancellationToken);
+            var accessRequest = await _unitOfWork.AccessAuthorizations.GetByIdAsync(requestId, cancellationToken)
+                ?? throw new NotFoundException(nameof(AccessAuthorization), requestId);
+            if (accessRequest.PatientId != patient.Id)
+                throw new ForbiddenAccessException("You don't have permissioon to approve this access request.");
+
+            accessRequest.Approve();
+
+            _unitOfWork.AccessAuthorizations.Update(accessRequest);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        }
+
+        public async Task RevokeAccessRequestAsync(Guid accessRequestId, CancellationToken cancellationToken = default)
+        {
+            var patient = await GetCurrentPatientAsync(cancellationToken);
+
+            var accessRequest = await _unitOfWork.AccessAuthorizations.GetByIdAsync(accessRequestId, cancellationToken)
+                ?? throw new NotFoundException(nameof(AccessAuthorization), accessRequestId);
+
+            if (accessRequest.PatientId != patient.Id)
+                throw new ForbiddenAccessException("You do not have permission to revoke this access authorization.");
+
+            accessRequest.Revoke();
+
+            _unitOfWork.AccessAuthorizations.Update(accessRequest);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         // ----- Helpers
 

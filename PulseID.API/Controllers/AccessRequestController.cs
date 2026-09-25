@@ -70,5 +70,45 @@ namespace PulseID.API.Controllers
             return Ok(result);
         }
 
+        [HttpPut("{id:guid}/reject")]
+        [Authorize(Roles = "Patient,SuperAdmin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RejectRequest(Guid id, CancellationToken cancellationToken)
+        {
+            await _accessRequestService.RejectAccessRequestAsync(id, cancellationToken);
+            return Ok(new { message = "Access request rejected successfully." });
+        }
+
+        [HttpPut("{id:guid}/approve")]
+        [Authorize(Roles = "Patient,SuperAdmin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ApproveRequest(Guid id, CancellationToken cancellationToken)
+        {
+            await _accessRequestService.ApproveAccessRequestAsync(id, cancellationToken);
+            return Ok(new { message = "Access request approved successfully." });
+        }
+
+
+        [HttpPut("{id:guid}/revoke")]
+        [Authorize(Roles = "Patient")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RevokeRequest(Guid id, CancellationToken cancellationToken)
+        {
+            await _accessRequestService.RevokeAccessRequestAsync(id, cancellationToken);
+            return Ok(new { message = "Access authorization revoked successfully." });
+        }
+
     }
 }
