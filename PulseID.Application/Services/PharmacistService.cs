@@ -1,7 +1,9 @@
 ﻿using PulseID.Application.Common.Exceptions;
+using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -14,16 +16,18 @@ namespace PulseID.Application.Services
     public class PharmacistService : IPharmacistService
     {
         readonly IUnitOfWork _unitOfWork;
-        public PharmacistService(IUnitOfWork unitOfWork)
+        readonly IIdentityService _identityService;
+        public PharmacistService(IUnitOfWork unitOfWork, IIdentityService identityService)
         {
             _unitOfWork = unitOfWork;
+            _identityService = identityService;
         }
 
-        static PharmacistDto ToDto(Pharmacist pharmacist) 
+        static PharmacistDto ToDto(Pharmacist pharmacist, string email) 
             => new()
                     {
                         Id = pharmacist.Id,
-                        UserId = pharmacist.UserId,
+                        Email = email,
                         FullName = pharmacist.FullName,
                         SyndicateNumber = pharmacist.SyndicateNumber,
                         SyndicateDocumentPath = pharmacist.SyndicateDocumentPath,
@@ -44,13 +48,27 @@ namespace PulseID.Application.Services
         public async Task<IReadOnlyList<PharmacistDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var pharmacists = await _unitOfWork.Pharmacists.GetAllActiveAsync(cancellationToken);
-            return pharmacists.Select(ToDto).ToList();
+            var pharmacistDtos = new List<PharmacistDto>();
+            foreach(var pharmacist in pharmacists)
+            {
+                var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+                pharmacistDtos.Add(ToDto(pharmacist, email));
+            }
+            return pharmacistDtos;
         }
 
         public async Task<PharmacistDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
+        }
+
+        public async Task<PharmacistDto> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        {
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(userId, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), userId);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
         public async Task<PharmacistDto> CreateAsync(CreatePharmacistDto dto, CancellationToken cancellationToken = default)
@@ -60,9 +78,9 @@ namespace PulseID.Application.Services
 
             if (await _unitOfWork.Pharmacists.GetBySyndicateNumberAsync(dto.SyndicateNumber) is not null)
                 throw new DuplicateEntityException($"A pharmacist with Syndicate Number '{dto.SyndicateNumber}' already exists.");
-
+            var (succeeded, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, AppRoles.Pharmacist, cancellationToken);
             var pharmacist = new Pharmacist(
-                dto.UserId,
+                userId,
                 dto.FullName,
                 dto.SyndicateNumber,
                 dto.SyndicateDocumentPath,
@@ -74,7 +92,7 @@ namespace PulseID.Application.Services
             await _unitOfWork.Pharmacists.AddAsync(pharmacist, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return ToDto(pharmacist);
+            return ToDto(pharmacist, dto.Email);
 
         }
 
@@ -88,8 +106,8 @@ namespace PulseID.Application.Services
 
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
 
@@ -99,7 +117,8 @@ namespace PulseID.Application.Services
             pharmacist.UpdatePersonalDetails(dto.PhoneNumber);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync();
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
 
@@ -120,7 +139,8 @@ namespace PulseID.Application.Services
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
 
         }
 
@@ -129,7 +149,8 @@ namespace PulseID.Application.Services
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
             pharmacist.Reject(pharmacyAdminId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
         public async Task<PharmacistDto> DeactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
@@ -138,7 +159,8 @@ namespace PulseID.Application.Services
             pharmacist.Deactivate(pharmacyAdminId);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
         public async Task<PharmacistDto> ReactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
@@ -147,7 +169,8 @@ namespace PulseID.Application.Services
             pharmacist.Reactivate(pharmacyAdminId);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return ToDto(pharmacist);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
         }
 
 
