@@ -9,15 +9,19 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using PulseID.Domain.Entities;
+using PulseID.Application.Common.Interfaces;
+using PulseID.Domain.Common;
 
 namespace PulseID.Application.Services
 {
     public class AccessValidationService : IAccessValidationService
     {
         readonly IUnitOfWork _unitOfWork;
-        public AccessValidationService(IUnitOfWork unitOfWork)
+        readonly ICurrentUserService _currentUserService;
+        public AccessValidationService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
+            _currentUserService = currentUserService;
         }
 
         public async Task<bool> HasAccessAsync(Patient patient, Guid requesterId, AccessScope requiredScope, CancellationToken cancellationToken = default)
@@ -25,6 +29,8 @@ namespace PulseID.Application.Services
 
             if (patient.UserId == requesterId)
                 return true;
+
+            if (_currentUserService.Role == AppRoles.SuperAdmin || _currentUserService.Role == AppRoles.HospitalAdmin) return true;
 
             var authorization = await _unitOfWork.AccessAuthorizations.GetActiveAuthorizationAsync(patient.Id, requesterId, cancellationToken);
 
