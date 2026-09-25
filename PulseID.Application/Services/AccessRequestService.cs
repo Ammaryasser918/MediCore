@@ -4,12 +4,14 @@ using PulseID.Application.DTOs.AccessAuthorization;
 using PulseID.Application.DTOs.OTP;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
 using PulseID.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -52,10 +54,24 @@ namespace PulseID.Application.Services
 
             if (!result.Success)
                 throw new BusinessRuleViolationException(result.Message ?? "Failed to send OTP to the patient.");
-
+            // OTP is temporary while production
             return ToDto(accessRequest, result.Otp);
 
 
+        }
+
+        public async Task<AccessRequestDto> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default)
+        {
+            var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+            var accessRequest = await _unitOfWork.AccessAuthorizations.GetByIdAsync(requestId, cancellationToken)
+                ?? throw new NotFoundException(nameof(AccessAuthorization), requestId);
+
+            var patient = await _unitOfWork.Patients.GetByUserIdAsync(currentUserId, cancellationToken);
+            bool isPatientOwner = (patient != null && accessRequest.PatientId == patient.Id);
+            bool isGranteeDoctor = (accessRequest.GranteeUserId == currentUserId);
+            if (!isPatientOwner && !isGranteeDoctor && (_currentUserService.Role != AppRoles.SuperAdmin))
+                throw new ForbiddenAccessException("you don't have permission to view this access request.");
+            return ToDto(accessRequest);
         }
 
         public async Task<AccessRequestDto> VerifyAccessOtpAsync(Guid accessRequestId, VerifyAccessOtpDto dto, CancellationToken cancellationToken = default)
@@ -89,6 +105,21 @@ namespace PulseID.Application.Services
         }
 
 
+        public async Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(bool latestOnly = false, CancellationToken cancellationToken = default)
+        {
+            var patient = await GetCurrentPatientAsync(cancellationToken);
+            var requests = await _unitOfWork.AccessAuthorizations.GetByPatientAsync(patient.Id, cancellationToken);
+            if (latestOnly)
+            {
+                var latestRequest = requests.FirstOrDefault();
+                if (latestRequest is null)
+                    return Enumerable.Empty<AccessRequestDto>();
+                return new[] { ToDto(latestRequest) };
+            }
+            return requests.Select(r => ToDto(r));
+        }
+
+
         // ----- Helpers
 
         private async Task<Doctor> GetRequestingApprovedDoctorAsync(CancellationToken cancellationToken)
@@ -104,7 +135,17 @@ namespace PulseID.Application.Services
 
         }
 
-        static AccessRequestDto ToDto(AccessAuthorization access, string rawOtpCode) => new()
+        private async Task<Patient> GetCurrentPatientAsync(CancellationToken cancellationToken)
+        {
+            var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+
+            var patient = await _unitOfWork.Patients.GetByUserIdAsync(currentUserId, cancellationToken)
+                ?? throw new ForbiddenAccessException("Only a registered patient can perform this action.");
+
+            return patient;
+        }
+
+        static AccessRequestDto ToDto(AccessAuthorization access, string? rawOtpCode = null) => new()
         {
             Id = access.Id,
             PatientId = access.PatientId,

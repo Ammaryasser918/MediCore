@@ -17,7 +17,7 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         }
 
         public async Task<IReadOnlyList<AccessAuthorization>> GetByPatientAsync(Guid patientId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(a => a.PatientId == patientId && !a.IsDeleted).ToListAsync(cancellationToken);
+            => await _dbSet.Where(a => a.PatientId == patientId && !a.IsDeleted).OrderByDescending(a => a.RequestedAt).ToListAsync(cancellationToken);
 
         public Task<AccessAuthorization?> GetActiveAuthorizationAsync(Guid patientId, Guid granteeUserId, CancellationToken cancellationToken = default)
             => _dbSet.FirstOrDefaultAsync(a => a.PatientId == patientId &&
