@@ -4,6 +4,7 @@ using PulseID.Application.DTOs.Allergies;
 using PulseID.Application.DTOs.ChronicDiseases;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,24 @@ namespace PulseID.Application.Services
         Guid RequireCurrentUserId()
             => _currentUserService.UserId ?? throw new AuthenticationRequiredException();
 
+        async Task<Guid> ResolvePatientIdAsync(Guid? patientId, CancellationToken cancellationToken)
+        {
+            if (patientId.HasValue && patientId.Value != Guid.Empty)
+                return patientId.Value;
+            var currentUserId = RequireCurrentUserId();
+            var role = _currentUserService.Role;
+
+            if (string.Equals(role, AppRoles.Patient, StringComparison.OrdinalIgnoreCase))
+            {
+                var patient = await _unitOfWork.Patients.GetByUserIdAsync(currentUserId, cancellationToken)
+                    ?? throw new NotFoundException($"Patient profile not found for user ID: '{currentUserId}'.");
+                return patient.Id;
+            }
+
+            throw new ArgumentException("PatientId query parameter is required for non-patient callers.");
+
+        }
+
         async Task<Patient> GetPatientWithAccessAsync(Guid patientId, CancellationToken cancellationToken)
         {
             var patient = await _unitOfWork.Patients.GetWithFullProfileAsync(patientId, cancellationToken)
@@ -56,15 +75,17 @@ namespace PulseID.Application.Services
         };
 
 
-        public async Task<IReadOnlyList<PatientAllergyDto>> GetPatientAllergiesAsync(Guid patientId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<PatientAllergyDto>> GetPatientAllergiesAsync(Guid? patientId, CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvepatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvepatientId, cancellationToken);
             return patient.PatientAllergies.Select(ToAllergyDto).ToList();
         }
 
-        public async Task<PatientAllergyDto> AddAllergyAsync(Guid patientId, AddPatientAllergyDto dto, CancellationToken cancellationToken = default)
+        public async Task<PatientAllergyDto> AddAllergyAsync(Guid? patientId, AddPatientAllergyDto dto, CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvePatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvePatientId, cancellationToken);
             var allergy = await _unitOfWork.Allergies.GetByIdAsync(dto.AllergyId, cancellationToken)
                 ?? throw new NotFoundException(nameof(Allergy), dto.AllergyId);
 
@@ -73,7 +94,7 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return new PatientAllergyDto
             {
-                PatientId = patientId,
+                PatientId = resolvePatientId,
                 AllergyId = allergy.Id,
                 AllergyName = allergy.Name,
                 AllergyDescription = allergy.Description,
@@ -83,12 +104,13 @@ namespace PulseID.Application.Services
 
         }
 
-        public async Task RemoveAllergyAsync(Guid patientId, Guid allergyId,  CancellationToken cancellationToken = default)
+        public async Task RemoveAllergyAsync(Guid? patientId, Guid allergyId,  CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvedPatientId, cancellationToken);
 
             if (patient.PatientAllergies.All(pa => pa.AllergyId != allergyId))
-                throw new NotFoundException($"Paitent {patientId} doesn't have allergy {allergyId} on file.");
+                throw new NotFoundException($"Paitent {resolvedPatientId} doesn't have allergy {allergyId} on file.");
 
             patient.RemoveAllergy(allergyId);
             await _unitOfWork.SaveChangesAsync( cancellationToken);
@@ -109,15 +131,17 @@ namespace PulseID.Application.Services
         };
 
 
-        public async Task<IReadOnlyList<PatientChronicDiseaseDto>> GetPatientChronicDiseasesAsync(Guid patientId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<PatientChronicDiseaseDto>> GetPatientChronicDiseasesAsync(Guid? patientId, CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvedPatientId, cancellationToken);
             return patient.PatientChronicDiseases.Select(ToChronicDiseaseDto).ToList();
         }
 
-        public async Task<PatientChronicDiseaseDto> AddChronicDiseaseAsync(Guid patientId, AddPateintChronicDiseaseDto dto,  CancellationToken cancellationToken = default)
+        public async Task<PatientChronicDiseaseDto> AddChronicDiseaseAsync(Guid? patientId, AddPateintChronicDiseaseDto dto,  CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvedPatientId, cancellationToken);
 
             var disease = await _unitOfWork.ChronicDiseases.GetByIdAsync(dto.ChronicDiseaseId, cancellationToken)
                 ?? throw new NotFoundException(nameof(ChronicDisease), dto.ChronicDiseaseId);
@@ -128,7 +152,7 @@ namespace PulseID.Application.Services
 
             return new PatientChronicDiseaseDto
             {
-                PatientId = patientId,
+                PatientId = resolvedPatientId,
                 ChronicDiseaseId = disease.Id,
                 ChronicDiseaseName = disease.Name,
                 ChronicDiseaseDescription = disease.Description,
@@ -137,12 +161,13 @@ namespace PulseID.Application.Services
 
         }
 
-        public async Task RemoveChronicDiseasesAsync(Guid patientId, Guid chronicDiseaseId, CancellationToken cancellationToken = default)
+        public async Task RemoveChronicDiseasesAsync(Guid? patientId, Guid chronicDiseaseId, CancellationToken cancellationToken = default)
         {
-            var patient = await GetPatientWithAccessAsync(patientId, cancellationToken);
+            var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
+            var patient = await GetPatientWithAccessAsync(resolvedPatientId, cancellationToken);
 
             if (patient.PatientChronicDiseases.All(pcd => pcd.ChronicDiseaseId != chronicDiseaseId))
-                throw new NotFoundException($"Patient {patientId} doesn't have chronic disease {chronicDiseaseId} on files.");
+                throw new NotFoundException($"Patient {resolvedPatientId} doesn't have chronic disease {chronicDiseaseId} on files.");
             patient.RemoveChronicDisease(chronicDiseaseId);
             await _unitOfWork.SaveChangesAsync( cancellationToken);
 

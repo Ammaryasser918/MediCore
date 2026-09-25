@@ -31,7 +31,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
         [EnableRateLimiting("SmallDataLimiting")]
-        public async Task<ActionResult<IReadOnlyList<PatientAllergyDto>>> GetAllergies(Guid patientId, CancellationToken cancellationToken)
+        public async Task<ActionResult<IReadOnlyList<PatientAllergyDto>>> GetAllergies([FromQuery] Guid? patientId, CancellationToken cancellationToken)
         {
             var allergies = await _patientMedicalConditionService.GetPatientAllergiesAsync(patientId, cancellationToken);
             return Ok(allergies);
@@ -46,7 +46,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        public async Task<ActionResult<PatientAllergyDto>> AddAllergy(Guid patientId, [FromBody] AddPatientAllergyDto dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<PatientAllergyDto>> AddAllergy([FromQuery] Guid? patientId, [FromBody] AddPatientAllergyDto dto, CancellationToken cancellationToken)
         {
             var added = await _patientMedicalConditionService.AddAllergyAsync(patientId, dto, cancellationToken);
             return CreatedAtAction(nameof(GetAllergies), new { patientId }, added);
@@ -57,7 +57,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        public async Task<IActionResult> RemoveAllergy(Guid patientId, Guid allergyId, CancellationToken cancellationToken)
+        public async Task<IActionResult> RemoveAllergy([FromQuery] Guid? patientId, Guid allergyId, CancellationToken cancellationToken)
         {
             await _patientMedicalConditionService.RemoveAllergyAsync(patientId, allergyId, cancellationToken);
             return NoContent();
@@ -74,7 +74,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
         [EnableRateLimiting("SmallDataLimiting")]
-        public async Task<ActionResult<IReadOnlyList<PatientChronicDiseaseDto>>> GetChronicDiseases(Guid patientId, CancellationToken cancellationToken)
+        public async Task<ActionResult<IReadOnlyList<PatientChronicDiseaseDto>>> GetChronicDiseases([FromQuery] Guid? patientId, CancellationToken cancellationToken)
         {
             var disease = await _patientMedicalConditionService.GetPatientChronicDiseasesAsync(patientId, cancellationToken);
             return Ok(disease);
@@ -89,7 +89,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        public async Task<ActionResult<PatientChronicDiseaseDto>> AddChronicDisease(Guid patientId, [FromBody] AddPateintChronicDiseaseDto dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<PatientChronicDiseaseDto>> AddChronicDisease([FromQuery] Guid? patientId, [FromBody] AddPateintChronicDiseaseDto dto, CancellationToken cancellationToken)
         {
             var added = await _patientMedicalConditionService.AddChronicDiseaseAsync(patientId, dto, cancellationToken);
             return CreatedAtAction(nameof(GetChronicDiseases), new { patientId }, added);
@@ -100,7 +100,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        public async Task<IActionResult> RemoveChronicDisease(Guid patientId, Guid chronicDiseaseId, CancellationToken cancellationToken)
+        public async Task<IActionResult> RemoveChronicDisease([FromQuery] Guid? patientId, Guid chronicDiseaseId, CancellationToken cancellationToken)
         {
             await _patientMedicalConditionService.RemoveChronicDiseasesAsync(patientId, chronicDiseaseId, cancellationToken);
             return NoContent();
