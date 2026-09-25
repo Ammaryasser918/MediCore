@@ -375,14 +375,15 @@ namespace PulseID.Application.Services
 
         public async Task<OtpResultDto> RequestLoginOtpAsync(string email, string password, CancellationToken cancellationToken = default)
         {
-            const string genericMessage = "If the credentials are valid, an OTP has been sent.";
+            const string successMessage = "If the credentials are valid, an OTP has been sent.";
+            const string errorMessage = "Email or password are invalid.";
 
             bool userExists = await _identityService.EmailExistsAsync(email, cancellationToken);
             if (!userExists)
-                return new OtpResultDto { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = false, Message = errorMessage };
 
             if (!await _identityService.CheckPasswordAsync(email, password, cancellationToken))
-                return new OtpResultDto { Success = true, Message = genericMessage };
+                return new OtpResultDto { Success = true, Message = errorMessage };
 
             var requstDto = new RequestOtpDto
             {
@@ -392,7 +393,7 @@ namespace PulseID.Application.Services
             };
 
             var result = await _otpService.GenerateAndSendOtpAsync(requstDto, cancellationToken);
-            result.Message = genericMessage;
+            result.Message = successMessage;
             return result;
 
            
