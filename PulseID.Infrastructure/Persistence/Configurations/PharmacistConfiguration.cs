@@ -46,6 +46,10 @@ namespace PulseID.Infrastructure.Persistence.Configurations
                 .HasField("_dispensedItems")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+            builder.Property(d => d.DateOfBirth)
+            .IsRequired()
+            .HasDefaultValue(new DateTime(1990, 1, 1));
+
 
         }
     }

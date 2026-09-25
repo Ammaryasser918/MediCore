@@ -37,7 +37,10 @@ namespace PulseID.Infrastructure.Persistence.Configurations
                 .HasForeignKey(d => d.ApprovedByHospitalAdminId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
+            builder.Property(d => d.DateOfBirth)
+            .IsRequired()
+            .HasDefaultValue(new DateTime(1990, 1, 1));
 
         }
     }

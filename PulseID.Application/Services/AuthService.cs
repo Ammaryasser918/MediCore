@@ -233,6 +233,7 @@ namespace PulseID.Application.Services
                     dto.NationalId,
                     dto.Specialization,
                     dto.PhoneNumber,
+                    dto.DateOfBirth,
                     personalImagePath:dto.PersonalImagePath
                     );
 
@@ -342,6 +343,7 @@ namespace PulseID.Application.Services
                     dto.SyndicateNumber,
                     dto.SyndicateDocumentPath,
                     dto.NationalId,
+                    dto.DateOfBirth,
                     dto.PhoneNumber,
                     dto.PharmacyId
                     );

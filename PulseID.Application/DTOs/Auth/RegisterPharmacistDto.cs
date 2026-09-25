@@ -13,6 +13,7 @@ namespace PulseID.Application.DTOs.Auth
 
         public string FullName { get; set; } = default!;
         public string NationalId { get; set; } = default!;
+        public DateTime DateOfBirth { get; set; }
         public string PhoneNumber { get; set; } = default!;
         public string SyndicateNumber { get; set; } = default!;
         public string SyndicateDocumentPath { get; set; } = default!;

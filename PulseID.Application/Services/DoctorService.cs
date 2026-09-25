@@ -33,6 +33,8 @@ namespace PulseID.Application.Services
             SyndicateDocumentPath = doctor.SyndicateDocumentPath,
             NationalId = doctor.NationalId,
             Specialization = doctor.Specialization,
+            Age = doctor.Age,
+            DateOfBirth = doctor.DateOfBirth,
             PhoneNumber = doctor.PhoneNumber,
             PersonalImagePath = doctor.PersonalImagePath,
             Status = doctor.Status,
@@ -101,6 +103,7 @@ namespace PulseID.Application.Services
                 doctorDto.NationalId,
                 doctorDto.Specialization,
                 doctorDto.PhoneNumber,
+                doctorDto.DateOfBirth,
                 doctorDto.DepartmentId,
                 doctorDto.PersonalImagePath
                 );
@@ -129,7 +132,7 @@ namespace PulseID.Application.Services
         public async Task<DoctorDto> UpdateAsync(Guid id, UpdateDoctorDto dto, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.UpdatePersonalDetails(dto.PhoneNumber, dto.Specialization, dto.PersonalImagePath);
+            doctor.UpdatePersonalDetails(dto.PhoneNumber, dto.Specialization, dto.DateOfBirth, dto.PersonalImagePath);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync();
             var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);

@@ -16,6 +16,8 @@ namespace PulseID.Domain.Entities
         public string SyndicateNumber { get; private set; } = default!;
         public string SyndicateDocumentPath { get; private set; } = default!;
         public string NationalId { get; private set; } = default!;
+        public DateTime DateOfBirth { get; private set; }
+        public int Age {  get; private set; }
         public PharmacistStatus Status { get; private set; }
         public string PhoneNumber { get; private set; } = default!;
         public Guid? PharmacyId { get; private set; }
@@ -32,7 +34,7 @@ namespace PulseID.Domain.Entities
         Pharmacist() { }
 
         public Pharmacist(Guid userId, string fullName, string syndicateNumber, string syndicateDocumentPath, 
-            string nationalId, string phoneNumber, Guid? pharmacyId = null)
+            string nationalId, DateTime dateOfBirth, string phoneNumber, Guid? pharmacyId = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is required", nameof(userId));
@@ -52,13 +54,15 @@ namespace PulseID.Domain.Entities
             PhoneNumber = phoneNumber;
             PharmacyId = pharmacyId;
             NationalId = nationalId;
+            DateOfBirth = dateOfBirth;
             Status = PharmacistStatus.Pending;
         }
 
 
-        public void UpdatePersonalDetails(string phoneNumber)
+        public void UpdatePersonalDetails(string phoneNumber, DateTime dateOfBirth)
         {
             PhoneNumber = phoneNumber;
+            DateOfBirth = dateOfBirth;
             MarkAsUpdated();
         }
 
@@ -119,6 +123,9 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-
+        public int GetAge()
+        {
+            return DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
+        }
     }
 }

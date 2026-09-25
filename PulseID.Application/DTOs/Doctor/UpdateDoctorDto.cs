@@ -10,6 +10,7 @@ namespace PulseID.Application.DTOs.Doctor
     {
         public string PhoneNumber { get; set; } = default!;
         public string Specialization { get; set; } = default!;
+        public DateTime DateOfBirth {  get; set; }
         public string? PersonalImagePath { get; set; }
     }
 }

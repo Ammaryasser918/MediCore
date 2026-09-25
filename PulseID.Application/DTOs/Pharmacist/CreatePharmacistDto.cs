@@ -14,6 +14,7 @@ namespace PulseID.Application.DTOs.Pharmacist
         public string SyndicateNumber { get; set; } = default!;
         public string SyndicateDocumentPath { get; set; } = default!;
         public string NationalId { get; set; } = default!;
+        public DateTime DateOfBirth { get; set; }
         public string PhoneNumber { get; set; } = default!;
         public Guid? PharmacyId { get; set; }
 

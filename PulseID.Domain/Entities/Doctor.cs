@@ -22,6 +22,8 @@ namespace PulseID.Domain.Entities
         public string Specialization { get; private set; } = default!;
         public string PhoneNumber { get; private set; } = default!;
         public string? PersonalImagePath { get; private set; }
+        public DateTime DateOfBirth { get; private set; }
+        public int Age { get; private set; }
         public DoctorStatus Status { get; private set; } = DoctorStatus.Pending;
 
         public Guid? ApprovedByHospitalAdminId { get; private set; } 
@@ -37,7 +39,7 @@ namespace PulseID.Domain.Entities
         Doctor() { }
 
         public Doctor(Guid userId, string fullName, string syndicateNumber, string syndicateDocumentPath, string nationalId, 
-            string specialization, string phoneNumber, Guid? departmentId = null, string? personalImagePath = null)
+            string specialization, string phoneNumber, DateTime dateOfBirth, Guid? departmentId = null, string? personalImagePath = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is Required", nameof(userId));
@@ -57,13 +59,15 @@ namespace PulseID.Domain.Entities
             DepartmentId = departmentId;
             PersonalImagePath = personalImagePath;
             NationalId = nationalId;
+            DateOfBirth = dateOfBirth;
             Status = DoctorStatus.Pending;
         }
 
-        public void UpdatePersonalDetails(string phoneNumber, string specialization, string? personalImagePath)
+        public void UpdatePersonalDetails(string phoneNumber, string specialization, DateTime dateOfBirth, string? personalImagePath)
         {
             PhoneNumber = phoneNumber;
             Specialization = specialization;
+            DateOfBirth = dateOfBirth;
             if (!string.IsNullOrWhiteSpace(personalImagePath))
                 PersonalImagePath = personalImagePath;
             MarkAsUpdated();
@@ -126,9 +130,12 @@ namespace PulseID.Domain.Entities
             DepartmentId = departmentId;
             MarkAsUpdated();
         }
-        
 
 
+        public int GetAge()
+        {
+            return DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
+        }
 
 
     }
