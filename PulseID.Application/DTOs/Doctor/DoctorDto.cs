@@ -10,7 +10,7 @@ namespace PulseID.Application.DTOs.Doctor
     public class DoctorDto
     {
         public Guid Id { get; set; }
-        public Guid UserId { get; set; }
+        public string Email { get; set; } = default!;
         public string FullName { get; set; } = default!;
         public string SyndicateNumber { get; set; } = default!;
         public string? SyndicateDocumentPath { get; set; }

@@ -8,7 +8,8 @@ namespace PulseID.Application.DTOs.Doctor
 {
     public class CreateDoctorDto
     {
-        public Guid UserId { get; set; }
+        public string Email { get; set; } = default!;
+        public string Password { get; set; } = default!;
         public string FullName { get; set; } = default!;
         public string SyndicateNumber { get; set; } = default!;
         public string SyndicateDocumentPath { get; set; } = default!;
