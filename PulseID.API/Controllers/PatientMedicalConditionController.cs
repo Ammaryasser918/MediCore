@@ -30,7 +30,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        [EnableRateLimiting("SmallDataLimiting")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<PatientAllergyDto>>> GetAllergies([FromQuery] Guid? patientId, CancellationToken cancellationToken)
         {
             var allergies = await _patientMedicalConditionService.GetPatientAllergiesAsync(patientId, cancellationToken);
@@ -73,7 +73,7 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
-        [EnableRateLimiting("SmallDataLimiting")]
+        [EnableRateLimiting("SmallDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<PatientChronicDiseaseDto>>> GetChronicDiseases([FromQuery] Guid? patientId, CancellationToken cancellationToken)
         {
             var disease = await _patientMedicalConditionService.GetPatientChronicDiseasesAsync(patientId, cancellationToken);
