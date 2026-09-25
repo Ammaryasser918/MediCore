@@ -92,6 +92,20 @@ namespace PulseID.Infrastructure.Identity
             return await _userManager.CheckPasswordAsync(user, password);
         }
 
+        public async Task<(bool Succeeded, string? Error)> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user is null)
+                return (false, "User not found.");
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (!result.Succeeded)
+            {
+                var errorMessage = result.Errors.FirstOrDefault()?.Description ?? "Failed to change password.";
+                return (false, errorMessage);
+            }
+            return (true, null);
+        }
+
         public async Task<Guid> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             var user = await _userManager.FindByEmailAsync(email);

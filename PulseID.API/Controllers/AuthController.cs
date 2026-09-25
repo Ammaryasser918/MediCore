@@ -186,6 +186,29 @@ namespace PulseID.API.Controllers
 
         }
 
+        [HttpPost("change-password")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { Error = "User is not authenticated." });
+            }
+
+            var result = await _authService.ChangePasswordAsync(userId, dto, cancellationToken);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { Error = result.Error });
+            }
+
+            return Ok(new { Message = "Password changed successfully. Please login again if required." });
+        }
 
 
     }

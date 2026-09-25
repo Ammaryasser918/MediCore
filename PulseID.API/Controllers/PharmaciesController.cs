@@ -24,7 +24,7 @@ namespace PulseID.API.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Authorize(Roles = "SuperAdmin")]
-        [EnableRateLimiting("BigDataLimiting")]
+        [EnableRateLimiting("BigDataLimiter")]
         public async Task<ActionResult<IReadOnlyList<PharmacyDto>>> GetAll(CancellationToken cancellationToken)
         {
             var pharmacies = await _pharmacyService.GetAllAsync(cancellationToken);

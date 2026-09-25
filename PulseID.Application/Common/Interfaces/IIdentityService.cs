@@ -17,6 +17,7 @@ namespace PulseID.Application.Common.Interfaces
         Task<Guid> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken = default);
         Task<string> GetEmailByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<(bool IsValid, string? Error)> ValidatePasswordsAsync(string password, CancellationToken cancellationToken = default);
+        Task<(bool Succeeded, string? Error)> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
         Task<bool> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<string> GetUserRoleAsync(Guid userId, CancellationToken cancellationToken = default);
 

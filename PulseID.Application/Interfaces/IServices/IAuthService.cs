@@ -30,5 +30,6 @@ namespace PulseID.Application.Interfaces.IServices
         Task<AuthResultDto> VerifyLoginAsync(string email, string otp, CancellationToken cancellationToken = default);
         Task LogoutAsync(Guid userId, CancellationToken cancellationToken = default);
         Task<TokenResponse> RefreshAsync(Guid userId, string refreshToken,  CancellationToken cancellationToken = default);
+        Task<AuthResultDto> ChangePasswordAsync(Guid userId, ChangePasswordDto dto, CancellationToken cancellationToken = default);
     }
 }

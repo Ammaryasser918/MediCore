@@ -460,6 +460,46 @@ namespace PulseID.Application.Services
         }
 
 
+
+        public async Task<AuthResultDto> ChangePasswordAsync(Guid userId, ChangePasswordDto dto, CancellationToken cancellationToken = default)
+        {
+            var (isPasswordValid, passwordError) = await _identityService.ValidatePasswordsAsync(dto.NewPassword);
+            if (!isPasswordValid)
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Error = passwordError ?? "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one non-alphanumeric character."
+                };
+            }
+
+            if (dto.CurrentPassword == dto.NewPassword)
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Error = "New password cannot be the same as current password."
+                };
+            }
+
+            var (succeeded, error) = await _identityService.ChangePasswordAsync(userId, dto.CurrentPassword, dto.NewPassword, cancellationToken);
+            if (!succeeded)
+            {
+                return new AuthResultDto
+                {
+                    Success = false,
+                    Error = error ?? "Failed to change password. Please verify your current password."
+                };
+            }
+
+            await _identityService.RevokeRefreshTokenAsync(userId, cancellationToken);
+
+            return new AuthResultDto
+            {
+                Success = true
+            };
+        }
+
         // A helper method to get the role of the User
         async Task<string> DetermineRoleAsync(Guid userId, CancellationToken cancellationToken)
         {
