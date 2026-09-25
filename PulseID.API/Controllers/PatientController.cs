@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
+using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Domain.Entities;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers
 {
@@ -53,6 +55,27 @@ namespace PulseID.API.Controllers
             if (!authResult.Succeeded)
                 return Forbid();
 
+            return Ok(patient);
+        }
+
+
+        /// <summary>
+        /// Retrieves the profile of the currently authenticated patient.
+        /// </summary>
+        // GET: api/patient/me
+        [Authorize(Roles = "Patient")]
+        [HttpGet("me")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<ActionResult<PatientDto>> GetCurrentPatient(CancellationToken cancellationToken)
+        {
+            var Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(Id, out var userId))
+                return Unauthorized("Can't identify the current user.");
+
+            var patient = await _patientService.GetByUserIdAsync(userId, cancellationToken);
             return Ok(patient);
         }
 

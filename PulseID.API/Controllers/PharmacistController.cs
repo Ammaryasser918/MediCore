@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Patient;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Services;
@@ -55,6 +56,28 @@ namespace PulseID.API.Controllers
 
             return Ok(pharmacist);
         }
+
+
+        /// <summary>
+        /// Retrieves the profile of the currently authenticated pharmacist.
+        /// </summary>
+        // GET: api/pharmacist/me
+        [Authorize(Roles = "Pharmacist")]
+        [HttpGet("me")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<ActionResult<PharmacistDto>> GetCurrentPharmacist(CancellationToken cancellationToken)
+        {
+            var Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(Id, out var userId))
+                return Unauthorized("Can't identify the current user.");
+
+            var pharmacist = await _pharmacistService.GetByUserIdAsync(userId, cancellationToken);
+            return Ok(pharmacist);
+        }
+
 
         //POST: api/pharmacists
         [Authorize(Roles = "PharmacyAdmin,SuperAdmin")]
