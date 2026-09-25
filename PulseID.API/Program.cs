@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PulseID.API.Authorization;
@@ -8,13 +11,12 @@ using PulseID.API.Middleware;
 using PulseID.Application;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Infrastructure;
+using PulseID.Infrastructure.Identity;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.RateLimiting;
+using System.Text.Json;
 using System.Threading.RateLimiting;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
-using PulseID.Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
 
 namespace PulseID.API
 {
@@ -29,7 +31,7 @@ namespace PulseID.API
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                string GetUserPartitiohnKey(HttpContext httpContext)
+                string GetUserPartitionKey(HttpContext httpContext)
                 {
                     return httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
                 }
@@ -52,7 +54,7 @@ namespace PulseID.API
                 // 20 requests per user per minute
                 options.AddPolicy("BigDataLimiter", httpContext =>
                 {
-                    var partitionKey = GetUserPartitiohnKey(httpContext);
+                    var partitionKey = GetUserPartitionKey(httpContext);
                     return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: partitionKey,
                         factory: _ => new FixedWindowRateLimiterOptions
@@ -66,7 +68,7 @@ namespace PulseID.API
                 // 60 requests per user per minute
                 options.AddPolicy("SmallDataLimiter", httpContext =>
                 {
-                    var partitionKey = GetUserPartitiohnKey(httpContext);
+                    var partitionKey = GetUserPartitionKey(httpContext);
                     return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: partitionKey,
                         factory: _ => new FixedWindowRateLimiterOptions
@@ -233,10 +235,39 @@ namespace PulseID.API
             });
 
             app.UseGlobalExceptionHandling();
+
+            app.UseStatusCodePages(async statusCodeContext =>
+            {
+                var response = statusCodeContext.HttpContext.Response;
+                if (!response.HasStarted && string.IsNullOrEmpty(response.ContentType))
+                {
+                    var statusCode = response.StatusCode;
+                    var error = ((HttpStatusCode)statusCode).ToString();
+                    var message = statusCode switch
+                    {
+                        401 => "Authentication token is missing or invalid.",
+                        403 => "You do not have permission to access this resource.",
+                        404 => "The requested resource was not found.",
+                        405 => "The HTTP method is not allowed for this endpoint.",
+                        _ => $"An error occurred (HTTP {statusCode})."
+                    };
+
+                    response.ContentType = "application/json";
+                    var payload = JsonSerializer.Serialize(new
+                    {
+                        status = statusCode,
+                        error,
+                        message
+                    });
+                    await response.WriteAsync(payload);
+                }
+            });
+
             app.UseHttpsRedirection();
             app.UseCors("PulseIDApiCorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseRateLimiter();
 
 
             app.MapControllers();
