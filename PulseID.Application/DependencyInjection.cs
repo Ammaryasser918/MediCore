@@ -33,6 +33,8 @@ namespace PulseID.Application
             services.AddScoped<IEmergencyContactService, EmergencyContactService>();
 
 
+            services.AddScoped<IHospitalService, HospitalService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
             return services;
         }
     }

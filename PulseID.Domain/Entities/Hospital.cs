@@ -16,13 +16,13 @@ namespace PulseID.Domain.Entities
         public string Address { get; private set; } = default!;
         public string PhoneNumber { get; private set; } = default!;
         public string? LicenseNumber { get; private set; } = default!;
-        public string? LicenseDocumentPath { get; private set; } 
+        public string? LicenseDocumentPath { get; private set; }
         public HospitalStatus Status { get; private set; } = HospitalStatus.Pending;
 
         public Guid? ApprovedByAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
 
-        
+
 
 
         readonly List<Department> _departments = new List<Department>();
@@ -42,6 +42,25 @@ namespace PulseID.Domain.Entities
             LicenseNumber = licenseNumber;
             LicenseDocumentPath = licenseDocumentPath;
             Status = HospitalStatus.Pending;
+        }
+
+        public void UpdateDetails(string name, string address, string phoneNumber, string? licenseNumber = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Hospital Name is Required", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentException("Hospital Address is Required", nameof(address));
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Hospital Phone Number is Required", nameof(phoneNumber));
+
+            Name = name;
+            Address = address;
+            PhoneNumber = phoneNumber;
+            LicenseNumber = licenseNumber;
+
+            MarkAsUpdated();
         }
 
 
