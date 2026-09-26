@@ -29,7 +29,6 @@ public class DepartmentService : IDepartmentService
     static DoctorDto ToDoctorDto(Doctor doctor) => new()
     {
         Id = doctor.Id,
-        UserId = doctor.UserId,
         FullName = doctor.FullName,
         SyndicateNumber = doctor.SyndicateNumber,
         SyndicateDocumentPath = doctor.SyndicateDocumentPath,
