@@ -207,6 +207,8 @@ namespace PulseID.API
 
 
             var app = builder.Build();
+            app.UseGlobalExceptionHandling();
+
 
             using (var scope = app.Services.CreateScope())
             {
@@ -247,7 +249,7 @@ namespace PulseID.API
                     c.RoutePrefix = string.Empty;
                 }
             });
-            app.UseGlobalExceptionHandling();
+            
 
             app.UseStatusCodePages(async statusCodeContext =>
             {
