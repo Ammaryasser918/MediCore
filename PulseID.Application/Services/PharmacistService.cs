@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
+using PulseID.Application.Common.Extentions;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.Interfaces;
@@ -256,8 +257,8 @@ namespace PulseID.Application.Services
             return new PharmacistShiftInfoDto
             {
                 PharmacistId = pharmacist.Id,
-                ShiftStartedAt = pharmacist.ShiftStartedAt,
-                ShiftEndedAt = pharmacist.ShiftEndedAt,
+                ShiftStartedAt = pharmacist.ShiftStartedAt.ToEgyptTime(),
+                ShiftEndedAt = pharmacist.ShiftEndedAt.ToEgyptTime(),
                 IsActive = isActive,
                 Status = status,
                 WorkingDuration = duration.HasValue
@@ -287,6 +288,9 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         }
+
+
+
 
         // helpers
         private Guid RequireCurrentUserId()
