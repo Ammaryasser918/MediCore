@@ -20,6 +20,8 @@ namespace PulseID.Domain.Entities
         public int Age {  get; private set; }
         public PharmacistStatus Status { get; private set; }
         public string PhoneNumber { get; private set; } = default!;
+        public DateTime? ShiftStartedAt { get; private set; }
+        public DateTime? ShiftEndedAt { get; private set; }
         public Guid? PharmacyId { get; private set; }
         public Pharmacy Pharmacy { get; private set; } = default!;
         public Guid? ApprovedByAdminId { get; private set; }
@@ -127,5 +129,24 @@ namespace PulseID.Domain.Entities
         {
             return DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
         }
+
+
+        public void StartShift()
+        {
+            ShiftStartedAt = DateTime.UtcNow;
+            ShiftEndedAt = null;
+            MarkAsUpdated();
+        }
+
+        public void EndShift()
+        {
+            ShiftEndedAt = DateTime.UtcNow;
+            MarkAsUpdated();
+        }
+
+        public bool IsShiftActive => ShiftStartedAt.HasValue &&
+            (!ShiftEndedAt.HasValue || ShiftStartedAt.Value > ShiftEndedAt.Value);
+
+
     }
 }

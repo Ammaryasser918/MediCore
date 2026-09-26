@@ -1,5 +1,7 @@
-﻿using PulseID.Application.Common.Exceptions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
+using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
@@ -17,10 +19,12 @@ namespace PulseID.Application.Services
     {
         readonly IUnitOfWork _unitOfWork;
         readonly IIdentityService _identityService;
-        public PharmacistService(IUnitOfWork unitOfWork, IIdentityService identityService)
+        readonly ICurrentUserService _currentUserService;
+        public PharmacistService(IUnitOfWork unitOfWork, IIdentityService identityService, ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
             _identityService = identityService;
+            _currentUserService = currentUserService;
         }
 
         static PharmacistDto ToDto(Pharmacist pharmacist, string email) 
@@ -205,6 +209,106 @@ namespace PulseID.Application.Services
             return ToDto(pharmacist, email);
         }
 
+
+        public async Task StartShiftAsync(Guid? pharmacistId, CancellationToken cancellationToken = default)
+        {
+            var resolvedPharmacistId = await ResolvePharmacistIdAsync(pharmacistId, cancellationToken);
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(resolvedPharmacistId, cancellationToken)
+                ?? throw new NotFoundException("Pharmacist not found.");
+            pharmacist.StartShift();
+            _unitOfWork.Pharmacists.Update(pharmacist);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task EndShiftAsync(Guid? pharmacistId, CancellationToken cancellationToken = default)
+        {
+            var resolvedPharmacistId = await ResolvePharmacistIdAsync(pharmacistId, cancellationToken);
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(resolvedPharmacistId, cancellationToken)
+                ?? throw new NotFoundException("Pharmacist not found.");
+            pharmacist.EndShift();
+            _unitOfWork.Pharmacists.Update(pharmacist);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        }
+
+
+        public async Task<PharmacistShiftInfoDto> GetShiftInfoAsync(Guid? pharmacistId, CancellationToken cancellationToken = default)
+        {
+            var resolvedPharmacistId = await ResolvePharmacistIdAsync(pharmacistId, cancellationToken);
+
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(resolvedPharmacistId, cancellationToken)
+                ?? throw new NotFoundException("Pharmacist not found.");
+
+            var isActive = pharmacist.IsShiftActive;
+
+            TimeSpan? duration = null;
+            if (pharmacist.ShiftStartedAt.HasValue)
+            {
+                var endTime = isActive ? DateTime.UtcNow : pharmacist.ShiftEndedAt;
+                if (endTime.HasValue)
+                    duration = endTime.Value - pharmacist.ShiftStartedAt.Value;
+            }
+
+            string status = !pharmacist.ShiftStartedAt.HasValue
+                ? "Not Started"
+                : (isActive ? "Active" : "Ended");
+
+            return new PharmacistShiftInfoDto
+            {
+                PharmacistId = pharmacist.Id,
+                ShiftStartedAt = pharmacist.ShiftStartedAt,
+                ShiftEndedAt = pharmacist.ShiftEndedAt,
+                IsActive = isActive,
+                Status = status,
+                WorkingDuration = duration.HasValue
+                    ? $"{duration.Value.Hours:D2}h {duration.Value.Minutes:D2}m"
+                    : null
+            };
+        }
+
+        public async Task<IReadOnlyList<PharmacistDto>> GetDeletedPharmacistsAsync(CancellationToken cancellationToken = default)
+        {
+            var deletedPharmacists = await _unitOfWork.Pharmacists.GetDeletedAsync(cancellationToken);
+            var pharmacistDtos = new List<PharmacistDto>();
+            foreach (var pharmacist in deletedPharmacists)
+            {
+                var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+                pharmacistDtos.Add(ToDto(pharmacist, email));
+            }
+            return pharmacistDtos;
+        }
+
+        public async Task RestorePharmacistAsync(Guid pharmacistId, CancellationToken cancellationToken = default)
+        {
+            var pharmacist = await _unitOfWork.Pharmacists.GetDeletedByIdAsync(pharmacistId, cancellationToken);
+            if (pharmacist is null) throw new NotFoundException("Deleted pharmacist record not found.");
+
+            _unitOfWork.Pharmacists.Restore(pharmacist);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        }
+
+        // helpers
+        private Guid RequireCurrentUserId()
+    => _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+
+        private async Task<Guid> ResolvePharmacistIdAsync(Guid? pharmacistId, CancellationToken cancellationToken)
+        {
+            if (pharmacistId.HasValue && pharmacistId.Value != Guid.Empty)
+                return pharmacistId.Value;
+
+            var currentUserId = RequireCurrentUserId();
+            var role = _currentUserService.Role;
+
+            if (string.Equals(role, AppRoles.Pharmacist, StringComparison.OrdinalIgnoreCase))
+            {
+                var pharmacist = await _unitOfWork.Pharmacists.GetByUserIdAsync(currentUserId, cancellationToken)
+                    ?? throw new NotFoundException($"Pharmacist profile not found for user ID: '{currentUserId}'.");
+                return pharmacist.Id;
+            }
+
+            throw new ArgumentException("PharmacistId query parameter is required for non-pharmacist callers.");
+        }
 
     }
 }

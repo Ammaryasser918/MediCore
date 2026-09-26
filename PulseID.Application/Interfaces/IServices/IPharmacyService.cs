@@ -1,4 +1,5 @@
-﻿using PulseID.Application.DTOs.Pharmacy;
+﻿using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Pharmacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,9 @@ namespace PulseID.Application.Interfaces.IServices
         
 
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<PharmacyDto>> GetDeletedPharmaciesAsync(CancellationToken cancellationToken = default);
+        Task RestorePharmacyAsync(Guid PharmacyId, CancellationToken cancellationToken = default);
 
         Task<PharmacyDto> ApproveAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
         Task<PharmacyDto> RejectAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);

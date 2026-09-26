@@ -46,6 +46,18 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public virtual void Delete(T entity)
             => _dbSet.Remove(entity);
 
+        public virtual async Task<IReadOnlyList<T>> GetDeletedAsync(CancellationToken cancellationToken = default)
+            => await _dbSet.Where(e => e.IsDeleted).ToListAsync(cancellationToken);
+
+        public virtual async Task<T?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => await _dbSet.FirstOrDefaultAsync(e => e.Id == id && e.IsDeleted, cancellationToken);
+
+        public virtual void Restore(T entity)
+        {
+            entity.Restore();
+            _dbSet.Update(entity);
+        }
+
 
     }
 }

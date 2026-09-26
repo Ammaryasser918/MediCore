@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Pharmacy;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 using System.Security.Claims;
 
 namespace PulseID.API.Controllers
@@ -53,7 +54,8 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [Authorize(Roles = "SuperAdmin")]
+        [AllowAnonymous]
+        [EnableRateLimiting("AuthLimiter")]
         public async Task<ActionResult<PharmacyDto>> Create([FromBody] CreatePharmacyDto dto, CancellationToken cancellationToken)
         {
             var created = await _pharmacyService.CreateAsync(dto, cancellationToken);
@@ -70,6 +72,24 @@ namespace PulseID.API.Controllers
         {
             await _pharmacyService.DeleteAsync(id, cancellationToken);
             return NoContent();
+        }
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "SuperAdmin")]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+        {
+            var result = await _pharmacyService.GetDeletedPharmaciesAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/restore")]
+        [Authorize(Roles = "SuperAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            await _pharmacyService.RestorePharmacyAsync(id, cancellationToken);
+            return Ok(new { Message = "Record restored successfully." });
         }
 
 

@@ -18,6 +18,7 @@ namespace PulseID.Application.Services
     {
         readonly IUnitOfWork _unitOfWork;
         readonly IIdentityService _identityService;
+        
         public DoctorService(IUnitOfWork unitOfWork, IIdentityService identityService)
         {
             _unitOfWork = unitOfWork;
@@ -175,6 +176,29 @@ namespace PulseID.Application.Services
                 throw;
             }
         }
+
+        public async Task<IReadOnlyList<DoctorDto>> GetDeletedDoctorsAsync(CancellationToken cancellationToken = default)
+        {
+            var deletedDoctors = await _unitOfWork.Doctors.GetDeletedAsync(cancellationToken);
+            var doctorDtos = new List<DoctorDto>();
+            foreach (var doctor in deletedDoctors)
+            {
+                var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);
+                doctorDtos.Add(ToDto(doctor, email));
+            }
+            return doctorDtos;
+        }
+
+        public async Task RestoreDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _unitOfWork.Doctors.GetDeletedByIdAsync(doctorId, cancellationToken);
+            if (doctor is null) throw new NotFoundException("Deleted doctor record not found.");
+
+            _unitOfWork.Doctors.Restore(doctor);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        }
+
 
         public async Task<DoctorDto> ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default)
         {

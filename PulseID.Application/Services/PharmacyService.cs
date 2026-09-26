@@ -25,6 +25,7 @@ namespace PulseID.Application.Services
         {
             Id = pharmacy.Id,
             Name = pharmacy.Name,
+            Email = pharmacy.Email,
             Address = pharmacy.Address,
             PhoneNumber = pharmacy.PhoneNumber,
             LicenseNumber = pharmacy.LicenseNumber,
@@ -59,6 +60,7 @@ namespace PulseID.Application.Services
 
             var pharmacy = new Pharmacy(
                 dto.Name,
+                dto.Email,
                 dto.Address,
                 dto.PhoneNumber,
                 dto.LicenseNumber,
@@ -86,6 +88,28 @@ namespace PulseID.Application.Services
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
+
+
+        public async Task<IReadOnlyList<PharmacyDto>> GetDeletedPharmaciesAsync(CancellationToken cancellationToken = default)
+        {
+            var deletedPharmacies = await _unitOfWork.Pharmacies.GetDeletedAsync(cancellationToken);
+            var pharmacyDtos = new List<PharmacyDto>();
+            foreach(var pharmacy in deletedPharmacies)
+            {
+                pharmacyDtos.Add(ToDto(pharmacy));
+            }
+            return pharmacyDtos;
+        }
+
+        public async Task RestorePharmacyAsync(Guid pharmacyId, CancellationToken cancellationToken = default)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetDeletedByIdAsync(pharmacyId, cancellationToken);
+            if (pharmacy is null) throw new NotFoundException("Deleted pharmacy record not found.");
+
+            _unitOfWork.Pharmacies.Restore(pharmacy);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
 
         public async Task<PharmacyDto> ApproveAsync(Guid id , Guid adminId, CancellationToken cancellationToken = default)
         {

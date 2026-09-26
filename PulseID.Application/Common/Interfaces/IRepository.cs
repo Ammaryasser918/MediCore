@@ -20,5 +20,9 @@ namespace PulseID.Application.Common.Interfaces
 
         void Delete(T entity);
 
+        Task<IReadOnlyList<T>> GetDeletedAsync(CancellationToken cancellationToken = default);
+        Task<T?> GetDeletedByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        void Restore(T entity);
+
     }
 }

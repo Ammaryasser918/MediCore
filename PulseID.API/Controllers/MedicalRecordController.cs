@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.MedicalRecord;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 
 namespace PulseID.API.Controllers
 {
@@ -109,6 +110,25 @@ namespace PulseID.API.Controllers
         {
             var newVersion = await _medicalRecordService.CreateNewVersionAsync(currentVersionId, dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = newVersion.Id }, newVersion);
+        }
+
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+        {
+            var result = await _medicalRecordService.GetDeletedMedicalRecordsAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/restore")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            await _medicalRecordService.RestoreMedicalRecordAsync(id, cancellationToken);
+            return Ok(new { Message = "Record restored successfully." });
         }
 
 

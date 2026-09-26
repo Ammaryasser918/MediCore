@@ -6,6 +6,7 @@ using Microsoft.Extensions.FileProviders;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 using PulseID.Domain.Entities;
 using System.Security.Claims;
 
@@ -141,6 +142,27 @@ namespace PulseID.API.Controllers
             await _patientService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
+
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "SuperAdmin")]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+        {
+            var result = await _patientService.GetDeletedPatientsAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/restore")]
+        [Authorize(Roles = "SuperAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            await _patientService.RestorePatientAsync(id, cancellationToken);
+            return Ok(new { Message = "Record restored successfully." });
+        }
+
+
 
     }
 }

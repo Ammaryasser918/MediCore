@@ -930,6 +930,12 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<Guid?>("RejectedByAdminId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ShiftEndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ShiftStartedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -984,6 +990,10 @@ namespace PulseID.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("HospitalId")
                         .HasColumnType("uniqueidentifier");

@@ -7,12 +7,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 
 namespace PulseID.Domain.Entities
 {
     public class Pharmacy : BaseEntity
     {
         public string Name { get; private set; } = default!;
+        public string Email { get; private set; } = default!;
         public string Address { get; private set; } = default!;
         public string PhoneNumber { get; private set; } = default!;
         public string? LicenseNumber { get; private set; } = default!;
@@ -36,14 +38,17 @@ namespace PulseID.Domain.Entities
 
         Pharmacy() { }
 
-        public Pharmacy(string name, string address, string phoneNumber, string? licenseNumber = null, string? licenseDocumentPath = null, Guid? hospitalId = null)
+        public Pharmacy(string name, string email, string address, string phoneNumber, string? licenseNumber = null, string? licenseDocumentPath = null, Guid? hospitalId = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Pharmacy name is required.", nameof(name));
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("Phone number is required.", nameof(phoneNumber));
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.", nameof(email));
 
             Name = name;
+            Email = email;
             Address = address;
             PhoneNumber = phoneNumber;
             LicenseNumber = licenseNumber;

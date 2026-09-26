@@ -131,6 +131,28 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
+
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "SuperAdmin,PharmacyAdmin")]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+        {
+            var result = await _pharmacistService.GetDeletedPharmacistsAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/restore")]
+        [Authorize(Roles = "SuperAdmin,PharmacyAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            await _pharmacistService.RestorePharmacistAsync(id, cancellationToken);
+            return Ok(new { Message = "Record restored successfully." });
+        }
+
+
+
         // PATCH: api/pharmacists/{id}/approve?pharmacyAdminId=...
         [Authorize(Roles = "PharmacyAdmin,SuperAdmin")]
         [HttpPatch("{id:guid}/approve")]
@@ -192,8 +214,31 @@ namespace PulseID.API.Controllers
             return Ok(updated);
         }
 
+        [HttpPost("start-shift")]
+        [Authorize(Roles = "Pharmacist,PharmacyAdmin,SuperAdmin")]
+        public async Task<IActionResult> StartShift([FromQuery] Guid? pharmacistId, CancellationToken cancellationToken)
+        {
+            await _pharmacistService.StartShiftAsync(pharmacistId, cancellationToken);
+            return Ok(new { Message = "Shift started successfully." });
+        }
+
+        [HttpPost("end-shift")]
+        [Authorize(Roles = "Pharmacist,PharmacyAdmin,SuperAdmin")]
+        public async Task<IActionResult> EndShift([FromQuery] Guid? pharmacistId, CancellationToken cancellationToken)
+        {
+            await _pharmacistService.EndShiftAsync(pharmacistId, cancellationToken);
+            return Ok(new { Message = "Shift ended successfully." });
+        }
 
 
+        [HttpGet("shift-info")]
+        [Authorize]
+        [ProducesResponseType(typeof(PharmacistShiftInfoDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetShiftInfo([FromQuery] Guid? pharmacistId, CancellationToken cancellationToken)
+        {
+            var result = await _pharmacistService.GetShiftInfoAsync(pharmacistId, cancellationToken);
+            return Ok(result);
+        }
 
     }
 }

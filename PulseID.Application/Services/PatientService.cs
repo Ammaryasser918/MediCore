@@ -49,7 +49,7 @@ namespace PulseID.Application.Services
         {
             var patients = await _unitOfWork.Patients.GetAllAsync(cancellationToken);
             var patientDtos = new List<PatientDto>();
-            foreach(var patient in patients)
+            foreach (var patient in patients)
             {
                 var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
                 patientDtos.Add(ToDto(patient, email));
@@ -154,6 +154,28 @@ namespace PulseID.Application.Services
                 throw;
             }
         }
+
+
+        public async Task<IReadOnlyList<PatientDto>> GetDeletedPatientsAsync(CancellationToken cancellationToken = default)
+        {
+            var deletedPatients = await _unitOfWork.Patients.GetDeletedAsync(cancellationToken);
+            var patientsDtos = new List<PatientDto>();
+            foreach (var patient in deletedPatients)
+            {
+                var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+                patientsDtos.Add(ToDto(patient, email));
+            }
+            return patientsDtos;
+        }
+
+        public async Task RestorePatientAsync(Guid patientId, CancellationToken cancellationToken = default)
+        {
+            var patient = await _unitOfWork.Patients.GetDeletedByIdAsync(patientId, cancellationToken);
+            if (patient is null) throw new NotFoundException("Deleted patient record not found.");
+            _unitOfWork.Patients.Update(patient);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
 
 
     }

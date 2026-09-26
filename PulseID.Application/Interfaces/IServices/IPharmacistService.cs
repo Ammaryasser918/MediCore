@@ -1,4 +1,5 @@
-﻿using PulseID.Application.DTOs.Pharmacist;
+﻿using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,12 @@ namespace PulseID.Application.Interfaces.IServices
         Task<PharmacistDto> AssignToPharmacyAsync(Guid id, AssignPharmacistToPharmacyDto dto, CancellationToken cancellationToken = default);
         Task<PharmacistDto> UpdatePharmacistDetailsAsync(Guid id, UpdatePharmacistDto dto, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task StartShiftAsync(Guid? pharmacistId, CancellationToken cancellationToken = default);
+        Task EndShiftAsync(Guid? pharmacistId, CancellationToken cancellationToken = default);
+        Task<PharmacistShiftInfoDto> GetShiftInfoAsync(Guid? pharmacistId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyList<PharmacistDto>> GetDeletedPharmacistsAsync(CancellationToken cancellationToken = default);
+        Task RestorePharmacistAsync(Guid pharmacistId, CancellationToken cancellationToken = default);
 
         Task<PharmacistDto> ApproveAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
         Task<PharmacistDto> RejectAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);

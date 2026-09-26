@@ -1,4 +1,5 @@
-﻿using PulseID.Application.DTOs.Patient;
+﻿using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Patient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,5 +17,8 @@ namespace PulseID.Application.Interfaces.IServices
         Task<PatientDto> CreateAsync(CreatePatientDto patientDto, CancellationToken cancellationToken = default);
         Task<PatientDto> UpdateAsync(Guid id, UpdatePatientDto patientDto, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<PatientDto>> GetDeletedPatientsAsync(CancellationToken cancellationToken = default);
+        Task RestorePatientAsync(Guid patientId, CancellationToken cancellationToken = default);
     }
 }

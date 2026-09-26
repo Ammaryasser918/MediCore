@@ -151,9 +151,24 @@ namespace PulseID.Application.Services
         }
 
 
+        public async Task<IReadOnlyList<MedicalRecordDto>> GetDeletedMedicalRecordsAsync(CancellationToken cancellationToken = default)
+        {
+            var deletedMedicalRecord = await _unitOfWork.MedicalRecords.GetDeletedAsync(cancellationToken);
+            var medicalRecordDtos = new List<MedicalRecordDto>();
+            foreach(var medicalRecord in deletedMedicalRecord)
+            {
+                medicalRecordDtos.Add(ToDto(medicalRecord));
+            }
+            return medicalRecordDtos;
+        }
 
-
-
+        public async Task RestoreMedicalRecordAsync(Guid medicalRecordId, CancellationToken cancellationToken = default)
+        {
+            var medicalRecord = await _unitOfWork.MedicalRecords.GetDeletedByIdAsync(medicalRecordId, cancellationToken);
+            if (medicalRecord is null) throw new NotFoundException("Deleted medical record not found.");
+            _unitOfWork.MedicalRecords.Restore(medicalRecord);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
     }
 }

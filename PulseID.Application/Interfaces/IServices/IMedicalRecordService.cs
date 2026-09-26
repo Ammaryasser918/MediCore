@@ -1,4 +1,5 @@
-﻿using PulseID.Application.DTOs.MedicalRecord;
+﻿using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.MedicalRecord;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,8 @@ namespace PulseID.Application.Interfaces.IServices
         Task<IReadOnlyList<MedicalRecordVersionDto>> GetVersionHistoryAsync(Guid anyVersionId, CancellationToken cancellationToken = default);
 
         Task<MedicalRecordDto> CreateNewVersionAsync(Guid currentVersionId, CreateMedicalRecordVersionDto dto, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<MedicalRecordDto>> GetDeletedMedicalRecordsAsync(CancellationToken cancellationToken = default);
+        Task RestoreMedicalRecordAsync(Guid medicalRecordId, CancellationToken cancellationToken = default);
 
     }
 }

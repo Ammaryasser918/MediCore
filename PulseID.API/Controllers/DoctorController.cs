@@ -144,6 +144,26 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
+        [HttpGet("deleted")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+        {
+            var result = await _doctorService.GetDeletedDoctorsAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:guid}/restore")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [EnableRateLimiting("SmallDataLimiter")]
+        public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+        {
+            await _doctorService.RestoreDoctorAsync(id, cancellationToken);
+            return Ok(new { Message = "Record restored successfully." });
+        }
+
+
+
         // PATCH: api/doctor/{id}/approve?hospitalAdminId=...
         [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
         [HttpPatch("{id:guid}/approve")]
