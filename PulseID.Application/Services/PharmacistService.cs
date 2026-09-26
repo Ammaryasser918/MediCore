@@ -124,15 +124,44 @@ namespace PulseID.Application.Services
             return ToDto(pharmacist, email);
         }
 
+        // Soft Delete
+        //public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        //{
+        //    var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
 
-        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        //    _unitOfWork.Pharmacists.Delete(pharmacist); // Soft Delete
+        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
+        //}
+
+
+        // Hard Delete
+        public async Task DeleteAsync(Guid pharmacistId, CancellationToken cancellationToken = default)
         {
-            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(pharmacistId, cancellationToken);
+            if (pharmacist is null)
+                throw new NotFoundException("Pharmacist not found.");
 
-            _unitOfWork.Pharmacists.Delete(pharmacist); // Soft Delete
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                _unitOfWork.Pharmacists.Delete(pharmacist);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                var isDeleted = await _identityService.DeleteUserAsync(pharmacist.UserId, cancellationToken);
+                if (!isDeleted)
+                {
+                    throw new Exception("Failed to delete user account.");
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
-
 
         public async Task<PharmacistDto> ApproveAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default)
         {

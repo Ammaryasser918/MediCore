@@ -117,12 +117,42 @@ namespace PulseID.Application.Services
 
         }
 
+        // Soft Delete
+        //public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        //{
+        //    var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
+        //    _unitOfWork.Patients.Delete(patient); // Soft Delete
+        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
+        //}
 
-        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+
+        // Hard Delete
+        public async Task DeleteAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
-            _unitOfWork.Patients.Delete(patient); // Soft Delete
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
+            if (patient is null)
+                throw new NotFoundException("Patient not found.");
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                _unitOfWork.Patients.Delete(patient);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                var isDeleted = await _identityService.DeleteUserAsync(patient.UserId, cancellationToken);
+                if (!isDeleted)
+                {
+                    throw new Exception("Failed to delete user account.");
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
 

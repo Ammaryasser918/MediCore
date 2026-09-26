@@ -37,8 +37,14 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public virtual void Update(T entity)
             => _dbSet.Update(entity);
 
+        // Soft delete is removed temporarly while development, will be reactivated in production
+        //public virtual void Delete(T entity)
+        //    => entity.SoftDelete();
+
+
+        // Hard Delete Temporarly while Development
         public virtual void Delete(T entity)
-            => entity.SoftDelete();
+            => _dbSet.Remove(entity);
 
 
     }
