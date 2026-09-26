@@ -13,6 +13,8 @@ namespace PulseID.Application.Interfaces.IServices
         Task<IReadOnlyList<ChronicDiseaseDto>> SearchAsync(string term, CancellationToken cancellationToken = default);
         Task<ChronicDiseaseDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<ChronicDiseaseDto> CreateAsync(CreateChronicDiseaseDto dto, CancellationToken cancellationToken = default);
+        Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
 
     }

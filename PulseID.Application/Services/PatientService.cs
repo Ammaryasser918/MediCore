@@ -118,26 +118,42 @@ namespace PulseID.Application.Services
         }
 
         // Soft Delete
-        //public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-        //{
-        //    var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
-        //    _unitOfWork.Patients.Delete(patient); // Soft Delete
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-        //}
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
+            _unitOfWork.Patients.Delete(patient); // Soft Delete
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
 
         // Hard Delete
-        public async Task DeleteAsync(Guid patientId, CancellationToken cancellationToken = default)
+        public async Task HardDeleteAsync(Guid patientId, CancellationToken cancellationToken = default)
         {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken);
+            var patient = await _unitOfWork.Patients.GetByIdWithDeletedAsync(patientId, cancellationToken);
             if (patient is null)
                 throw new NotFoundException("Patient not found.");
+
+            var medicalRecords = await _unitOfWork.MedicalRecords.GetByPatientAsync(patientId, cancellationToken);
+            var emergencyContact = await _unitOfWork.EmergencyContact.GetByPatientIdAsync(patientId, cancellationToken);
 
             using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
             try
             {
-                _unitOfWork.Patients.Delete(patient);
+                // Deleting Medical Files will be here after completing it
+
+
+                foreach (var record in medicalRecords)
+                {
+                    _unitOfWork.MedicalRecords.HardDelete(record);
+                }
+
+                foreach (var contact in emergencyContact)
+                {
+                    _unitOfWork.EmergencyContact.HardDelete(contact);
+                }
+
+                _unitOfWork.Patients.HardDelete(patient);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 var isDeleted = await _identityService.DeleteUserAsync(patient.UserId, cancellationToken);

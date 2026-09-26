@@ -89,6 +89,21 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var pharmacy = await _unitOfWork.Pharmacies.GetByIdWithDeletedAsync(id, cancellationToken);
+            if (pharmacy is null) throw new NotFoundException("Pharmacy not found.");
+
+            try
+            {
+                _unitOfWork.Pharmacies.HardDelete(pharmacy);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Failed to delete pharmacy.");
+            }
+        }
 
         public async Task<IReadOnlyList<PharmacyDto>> GetDeletedPharmaciesAsync(CancellationToken cancellationToken = default)
         {

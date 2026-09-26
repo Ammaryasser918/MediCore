@@ -129,19 +129,19 @@ namespace PulseID.Application.Services
         }
 
         // Soft Delete
-        //public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-        //{
-        //    var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
 
-        //    _unitOfWork.Pharmacists.Delete(pharmacist); // Soft Delete
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-        //}
+            _unitOfWork.Pharmacists.Delete(pharmacist); // Soft Delete
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
 
         // Hard Delete
-        public async Task DeleteAsync(Guid pharmacistId, CancellationToken cancellationToken = default)
+        public async Task HardDeleteAsync(Guid pharmacistId, CancellationToken cancellationToken = default)
         {
-            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(pharmacistId, cancellationToken);
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdWithDeletedAsync(pharmacistId, cancellationToken);
             if (pharmacist is null)
                 throw new NotFoundException("Pharmacist not found.");
 
@@ -149,7 +149,7 @@ namespace PulseID.Application.Services
 
             try
             {
-                _unitOfWork.Pharmacists.Delete(pharmacist);
+                _unitOfWork.Pharmacists.HardDelete(pharmacist);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 var isDeleted = await _identityService.DeleteUserAsync(pharmacist.UserId, cancellationToken);

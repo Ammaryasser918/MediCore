@@ -14,5 +14,6 @@ namespace PulseID.Application.Interfaces.IServices
         Task<EmergencyContactDto> CreateAsync(CreateEmergencyContactDto dto, Guid? patientId, CancellationToken cancellationToken = default);
         Task<EmergencyContactDto> UpdateAsync(Guid id, UpdateEmergencyContactDto dto, CancellationToken cancellationToken = default);
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

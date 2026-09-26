@@ -87,6 +87,25 @@ namespace PulseID.Application.Services
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
+
+        public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var contact = await _unitOfWork.EmergencyContact.GetByIdWithDeletedAsync(id, cancellationToken);
+            if (contact is null) throw new NotFoundException("Emergency contact not found.");
+
+            try
+            {
+                _unitOfWork.EmergencyContact.HardDelete(contact);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Failed to delete emergency contact.");
+            }
+        }
+
+
+        // Helpers
         Guid RequireCurrentUserId()
             => _currentUserService.UserId ?? throw new AuthenticationRequiredException();
 

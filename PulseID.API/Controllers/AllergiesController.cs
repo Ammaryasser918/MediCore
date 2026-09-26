@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Allergies;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 
 namespace PulseID.API.Controllers
 {
@@ -69,6 +70,24 @@ namespace PulseID.API.Controllers
             return CreatedAtAction(nameof(GetAll), new { id = created.Id }, created);
         }
 
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        {
+            await _allergyService.DeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpDelete("{id:guid}/hard-delete")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+        {
+            await _allergyService.HardDeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
 
     }
 }

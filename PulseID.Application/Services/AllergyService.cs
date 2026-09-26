@@ -86,6 +86,28 @@ namespace PulseID.Application.Services
 
         }
 
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var allergy = await _unitOfWork.Allergies.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Allergy), id);
+            _unitOfWork.Allergies.Delete(allergy); // Soft Delete
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var allergy = await _unitOfWork.Allergies.GetByIdWithDeletedAsync(id, cancellationToken);
+            if (allergy is null) throw new NotFoundException("Allergy not found.");
+            try
+            {
+                _unitOfWork.Allergies.HardDelete(allergy);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Failed to delete Allergy.");
+            }
+        }
+
 
     }
 }

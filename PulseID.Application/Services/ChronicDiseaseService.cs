@@ -84,5 +84,27 @@ namespace PulseID.Application.Services
         }
 
 
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(ChronicDisease), id);
+            _unitOfWork.ChronicDiseases.Delete(chronicDisease); // Soft Delete
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var chronicDisease = await _unitOfWork.ChronicDiseases.GetByIdWithDeletedAsync(id, cancellationToken);
+            if (chronicDisease is null) throw new NotFoundException("Chronic disease not found.");
+            try
+            {
+                _unitOfWork.ChronicDiseases.HardDelete(chronicDisease);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Failed to delete chronic disease.");
+            }
+        }
+
     }
 }

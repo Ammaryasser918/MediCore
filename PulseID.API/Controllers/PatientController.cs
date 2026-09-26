@@ -143,6 +143,14 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{id:guid}/hard-delete")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+        {
+            await _patientService.HardDeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
+
 
         [HttpGet("deleted")]
         [Authorize(Roles = "SuperAdmin")]

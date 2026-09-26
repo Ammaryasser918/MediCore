@@ -17,7 +17,7 @@ namespace PulseID.Application.Interfaces.IServices
         
 
         Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-
+        Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<PharmacyDto>> GetDeletedPharmaciesAsync(CancellationToken cancellationToken = default);
         Task RestorePharmacyAsync(Guid PharmacyId, CancellationToken cancellationToken = default);
 

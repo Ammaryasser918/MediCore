@@ -37,14 +37,9 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         public virtual void Update(T entity)
             => _dbSet.Update(entity);
 
-        // Soft delete is removed temporarly while development, will be reactivated in production
-        //public virtual void Delete(T entity)
-        //    => entity.SoftDelete();
-
-
-        // Hard Delete Temporarly while Development
         public virtual void Delete(T entity)
-            => _dbSet.Remove(entity);
+            => entity.SoftDelete();
+
 
         public virtual async Task<IReadOnlyList<T>> GetDeletedAsync(CancellationToken cancellationToken = default)
             => await _dbSet.Where(e => e.IsDeleted).ToListAsync(cancellationToken);
@@ -57,6 +52,12 @@ namespace PulseID.Infrastructure.Persistence.Repositories
             entity.Restore();
             _dbSet.Update(entity);
         }
+
+        public virtual async Task<T?> GetByIdWithDeletedAsync(Guid id, CancellationToken cancellationToken = default)
+            => await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        public virtual void HardDelete(T entity)
+            => _dbSet.Remove(entity);
 
 
     }

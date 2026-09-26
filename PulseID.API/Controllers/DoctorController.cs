@@ -7,6 +7,7 @@ using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Services;
+using PulseID.Domain.Common;
 using System.Security.Claims;
 
 namespace PulseID.API.Controllers
@@ -141,6 +142,14 @@ namespace PulseID.API.Controllers
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
             await _doctorService.DeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpDelete("{id:guid}/hard-delete")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+        {
+            await _doctorService.HardDeleteAsync(id, cancellationToken);
             return NoContent();
         }
 

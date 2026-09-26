@@ -13,5 +13,7 @@ namespace PulseID.Application.Interfaces.IServices
         Task<IReadOnlyList<AllergyDto>> SearchAsync(string term, CancellationToken cancellationToken = default);
         Task<AllergyDto> CreateAsync(CreateAllergyDto dto, CancellationToken cancellationToken = default);
         Task<AllergyDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+        Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

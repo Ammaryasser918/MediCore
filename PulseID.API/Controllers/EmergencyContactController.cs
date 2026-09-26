@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Identity.Client;
 using PulseID.Application.DTOs.EmergencyContact;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 
 namespace PulseID.API.Controllers
 {
@@ -82,6 +83,13 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{id:guid}/hard-delete")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+        {
+            await _emergencyContactService.HardDeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
 
 
     }

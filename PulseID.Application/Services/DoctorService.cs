@@ -141,17 +141,17 @@ namespace PulseID.Application.Services
         }
 
         // Soft Delete
-        //public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-        //{
-        //    var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-        //    _unitOfWork.Doctors.Delete(doctor); // Soft Delete
-        //    await _unitOfWork.SaveChangesAsync(cancellationToken);
-        //}
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
+            _unitOfWork.Doctors.Delete(doctor); // Soft Delete
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         // Hard Delete
-        public async Task DeleteAsync(Guid doctorId, CancellationToken cancellationToken = default)
+        public async Task HardDeleteAsync(Guid doctorId, CancellationToken cancellationToken = default)
         {
-            var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId, cancellationToken);
+            var doctor = await _unitOfWork.Doctors.GetByIdWithDeletedAsync(doctorId, cancellationToken);
             if (doctor is null)
                 throw new NotFoundException("Doctor not found.");
 
@@ -159,7 +159,7 @@ namespace PulseID.Application.Services
 
             try
             {
-                _unitOfWork.Doctors.Delete(doctor);
+                _unitOfWork.Doctors.HardDelete(doctor);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 var isDeleted = await _identityService.DeleteUserAsync(doctor.UserId, cancellationToken);

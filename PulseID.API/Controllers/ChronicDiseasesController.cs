@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.ChronicDiseases;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 
 
 namespace PulseID.API.Controllers
@@ -70,6 +71,24 @@ namespace PulseID.API.Controllers
         {
             var created = await _chronicDiseaseService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        {
+            await _chronicDiseaseService.DeleteAsync(id, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpDelete("{id:guid}/hard-delete")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+        {
+            await _chronicDiseaseService.HardDeleteAsync(id, cancellationToken);
+            return NoContent();
         }
 
     }
