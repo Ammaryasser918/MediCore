@@ -11,12 +11,14 @@ namespace PulseID.Domain.Entities
 {
     public class Prescription : BaseEntity
     {
-        
+
 
         public Guid MedicalRecordId { get; private set; }
         public MedicalRecord MedicalRecord { get; private set; } = default!;
 
         public DateTime IssueDate { get; private set; }
+
+        public DateTime? DispensedAt { get; private set; }
         public PrescriptionStatus Status { get; private set; } = PrescriptionStatus.Created;
 
         public string? Notes { get; private set; }
@@ -37,16 +39,39 @@ namespace PulseID.Domain.Entities
             Notes = notes;
         }
 
-        public PrescriptionItem AddItem(string medicationCode, string medicationName, string dosage, int duration, string? instructions = null)
+        public void UpdateDetails(string? notes)
+        {
+            if (Status != PrescriptionStatus.Created)
+                throw new BusinessRuleViolationException("Can't update a prescription after it is verified.");
+
+            Notes = notes;
+            MarkAsUpdated();
+        }
+
+        public PrescriptionItem AddItem(Guid medicationId, string dosage, int duration, string? instructions = null)
         {
             if (Status != PrescriptionStatus.Created)
                 throw new BusinessRuleViolationException("Can't add medications after prescription is verified");
 
-            var item = new PrescriptionItem(Id, medicationCode, medicationName, dosage, duration, instructions);
+            var item = new PrescriptionItem(Id, medicationId, dosage, duration, instructions);
             _prescriptionItems.Add(item);
             MarkAsUpdated();
             return item;
 
+        }
+
+        public void UpdateItem(Guid itemId, Guid medicationId, string dosage, int duration, string? instructions = null)
+        {
+            if (Status != PrescriptionStatus.Created)
+                throw new BusinessRuleViolationException("Can't update medications after prescription is verified.");
+
+            var item = _prescriptionItems.FirstOrDefault(i => i.Id == itemId);
+
+            if (item is null)
+                throw new BusinessRuleViolationException("Prescription item was not found.");
+
+            item.UpdateDetails(medicationId, dosage, duration, instructions);
+            MarkAsUpdated();
         }
 
         public void RemoveItem(Guid itemId)
@@ -63,13 +88,34 @@ namespace PulseID.Domain.Entities
             }
         }
 
-        public void MarkAdVerified()
+        public void MarkAsVerified()
         {
             if (!_prescriptionItems.Any())
             {
                 throw new BusinessRuleViolationException("Can't verify an empty prescription");
             }
             Status = PrescriptionStatus.Verified;
+            MarkAsUpdated();
+        }
+
+        public void RefreshStatus()
+        {
+            if (!_prescriptionItems.Any())
+                return;
+
+            if (_prescriptionItems.All(i => i.Status == PrescriptionItemStatus.Dispensed))
+            {
+                if (Status != PrescriptionStatus.Dispensed)
+                {
+                    Status = PrescriptionStatus.Dispensed;
+                    DispensedAt = DateTime.UtcNow;
+                }
+            }
+            else if (_prescriptionItems.Any(i => i.Status == PrescriptionItemStatus.Dispensed))
+            {
+                Status = PrescriptionStatus.PartiallyDispensed;
+            }
+
             MarkAsUpdated();
         }
 

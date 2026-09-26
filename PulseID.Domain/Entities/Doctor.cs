@@ -26,11 +26,13 @@ namespace PulseID.Domain.Entities
         public int Age { get; private set; }
         public DoctorStatus Status { get; private set; } = DoctorStatus.Pending;
 
-        public Guid? ApprovedByHospitalAdminId { get; private set; } 
+        public Guid? ApprovedByHospitalAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
 
         public Guid? RejectedByAdminId { get; private set; }
         public DateTime? RejectedAt { get; private set;  }
+        readonly List<LabTestRequest> _labTestRequests = new List<LabTestRequest>();
+        public IReadOnlyCollection<LabTestRequest> LabTestRequests => _labTestRequests.AsReadOnly();
 
         public Guid? DepartmentId { get; private set; }
         public Department? Department { get; private set; } = default!;

@@ -38,6 +38,11 @@ namespace PulseID.Infrastructure.Persistence
         public DbSet<PatientChronicDisease> PatientChronicDiseases => Set<PatientChronicDisease>();
         public DbSet<HospitalAdmin> HospitalAdmins => Set<HospitalAdmin>();
         public DbSet<PharmacyAdmin> PharmacyAdmin => Set<PharmacyAdmin>();
+        public DbSet<Lab> Labs => Set<Lab>();
+        public DbSet<LabTest> LabTests => Set<LabTest>();
+        public DbSet<LabTestRequest> LabTestRequests => Set<LabTestRequest>();
+        public DbSet<LabTechnician> LabTechnicians => Set<LabTechnician>();
+        public DbSet<Medication> Medications => Set<Medication>();
 
 
         protected override void OnModelCreating(ModelBuilder builder)

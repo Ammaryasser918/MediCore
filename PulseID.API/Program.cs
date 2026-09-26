@@ -17,6 +17,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using PulseID.Infrastructure.Persistence;
+using PulseID.Infrastructure.Persistence.Seed;
 
 namespace PulseID.API
 {
@@ -211,10 +213,18 @@ namespace PulseID.API
                 var services = scope.ServiceProvider;
                 try
                 {
+                    // Seed Super Admin
                     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
                     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
 
                     await IdentityDataSeeder.SeedSuperAdminAsync(userManager, roleManager);
+                    
+                    // Seed database.
+                    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+                    var csvPath = Path.Combine(AppContext.BaseDirectory, "medications.csv");
+
+                    await MedicationsSeeder.SeedAsync(context, csvPath);
                 }
                 catch (Exception ex)
                 {
@@ -224,7 +234,11 @@ namespace PulseID.API
             }
 
 
-                app.UseSwagger();
+
+            
+
+            // Configure the HTTP request pipeline.
+            app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "PulseID API v1");
@@ -233,7 +247,6 @@ namespace PulseID.API
                     c.RoutePrefix = string.Empty;
                 }
             });
-
             app.UseGlobalExceptionHandling();
 
             app.UseStatusCodePages(async statusCodeContext =>

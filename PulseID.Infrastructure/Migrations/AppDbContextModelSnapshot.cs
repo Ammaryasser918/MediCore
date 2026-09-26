@@ -572,6 +572,231 @@ namespace PulseID.Infrastructure.Migrations
                     b.ToTable("HospitalAdmins", (string)null);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.Lab", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ApprovedByHospitalAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LicenseDocumentPath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("LicenseNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByHospitalAdminId");
+
+                    b.ToTable("Labs", (string)null);
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTechnician", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ApprovedByHospitalAdminId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LabId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LicenseDocumentPath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("LicenseNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("NationalId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PersonalImagePath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByHospitalAdminId");
+
+                    b.HasIndex("LabId");
+
+                    b.HasIndex("LicenseNumber")
+                        .IsUnique();
+
+                    b.HasIndex("NationalId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("LabTechnicians", (string)null);
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("LabTests", (string)null);
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTestRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LabId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LabTestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResultFileUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("SampleCollectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("LabId");
+
+                    b.HasIndex("LabTestId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("LabTestRequests", (string)null);
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.MedicalFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -685,6 +910,56 @@ namespace PulseID.Infrastructure.Migrations
                     b.HasIndex("RootRecordId");
 
                     b.ToTable("MedicalRecords", (string)null);
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.Medication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CommercialNameAr")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CommercialNameEn")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DrugClass")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Manufacturer")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("PriceEgp")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Route")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ScientificName")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommercialNameEn");
+
+                    b.ToTable("Medications", (string)null);
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.Notification", b =>
@@ -1081,6 +1356,9 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DispensedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -1137,14 +1415,8 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("MedicationCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MedicationName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                    b.Property<Guid>("MedicationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("PrescriptionId")
                         .HasColumnType("uniqueidentifier");
@@ -1158,6 +1430,8 @@ namespace PulseID.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DispensedByPharmacistId");
+
+                    b.HasIndex("MedicationId");
 
                     b.HasIndex("PrescriptionId");
 
@@ -1364,6 +1638,70 @@ namespace PulseID.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.Lab", b =>
+                {
+                    b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByHospitalAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTechnician", b =>
+                {
+                    b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedByHospitalAdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PulseID.Domain.Entities.Lab", "Lab")
+                        .WithMany("LabTechnicians")
+                        .HasForeignKey("LabId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Lab");
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTestRequest", b =>
+                {
+                    b.HasOne("PulseID.Domain.Entities.Doctor", "Doctor")
+                        .WithMany("LabTestRequests")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PulseID.Domain.Entities.Lab", "Lab")
+                        .WithMany("TestRequests")
+                        .HasForeignKey("LabId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PulseID.Domain.Entities.LabTest", "LabTest")
+                        .WithMany("TestRequests")
+                        .HasForeignKey("LabTestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PulseID.Domain.Entities.Patient", "Patient")
+                        .WithMany("LabTestRequests")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Lab");
+
+                    b.Navigation("LabTest");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.HospitalAdmin", b =>
                 {
                     b.HasOne("PulseID.Domain.Entities.Hospital", "Hospital")
@@ -1552,10 +1890,16 @@ namespace PulseID.Infrastructure.Migrations
 
             modelBuilder.Entity("PulseID.Domain.Entities.PrescriptionItem", b =>
                 {
-                    b.HasOne("PulseID.Domain.Entities.Pharmacist", "DispensedbyPharmacist")
+                    b.HasOne("PulseID.Domain.Entities.Pharmacist", "DispensedByPharmacist")
                         .WithMany("PrescriptionItems")
                         .HasForeignKey("DispensedByPharmacistId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PulseID.Domain.Entities.Medication", "Medication")
+                        .WithMany("PrescriptionItems")
+                        .HasForeignKey("MedicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("PulseID.Domain.Entities.Prescription", "Prescription")
                         .WithMany("PrescriptionItems")
@@ -1563,7 +1907,9 @@ namespace PulseID.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DispensedbyPharmacist");
+                    b.Navigation("DispensedByPharmacist");
+
+                    b.Navigation("Medication");
 
                     b.Navigation("Prescription");
                 });
@@ -1573,9 +1919,26 @@ namespace PulseID.Infrastructure.Migrations
                     b.Navigation("Doctors");
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.Doctor", b =>
+                {
+                    b.Navigation("LabTestRequests");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Hospital", b =>
                 {
                     b.Navigation("Departments");
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.Lab", b =>
+                {
+                    b.Navigation("LabTechnicians");
+
+                    b.Navigation("TestRequests");
+                });
+
+            modelBuilder.Entity("PulseID.Domain.Entities.LabTest", b =>
+                {
+                    b.Navigation("TestRequests");
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.MedicalRecord", b =>
@@ -1585,9 +1948,16 @@ namespace PulseID.Infrastructure.Migrations
                     b.Navigation("Prescription");
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.Medication", b =>
+                {
+                    b.Navigation("PrescriptionItems");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Patient", b =>
                 {
                     b.Navigation("EmergencyContacts");
+
+                    b.Navigation("LabTestRequests");
 
                     b.Navigation("MedicalFiles");
 

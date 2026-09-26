@@ -21,6 +21,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="Persistence\Seed\medications.csv">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<TargetPath>medications.csv</TargetPath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\PulseID.Application\PulseID.Application.csproj" />
 		<ProjectReference Include="..\PulseID.Domain\PulseID.Domain.csproj" />
 	</ItemGroup>

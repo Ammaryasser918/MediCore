@@ -14,8 +14,8 @@ namespace PulseID.Domain.Entities
         public Guid PrescriptionId { get; private set; }
         public Prescription Prescription { get; private set; } = default!;
 
-        public string MedicationCode { get; private set; } = default!;
-        public string MedicationName { get; private set; } = default!;
+        public Guid MedicationId { get; private set; }
+        public Medication Medication { get; private set; } = default!;
 
         public string Dosage { get; private set; } = default!;
         public int Duration { get; private set; }
@@ -25,39 +25,60 @@ namespace PulseID.Domain.Entities
         public PrescriptionItemStatus Status { get; private set; } = PrescriptionItemStatus.Pending;
 
         public Guid? DispensedByPharmacistId { get; private set; }
-        public Pharmacist? DispensedbyPharmacist { get; private set; }
+        public Pharmacist? DispensedByPharmacist { get; private set; }
 
         public DateTime? DispensedAt { get; private set; }
 
         PrescriptionItem() { }
 
-        public PrescriptionItem(Guid prescriptionId, string medicationCode, string medicationName, string dosage, int duration, string? instructions = null)
+        public PrescriptionItem(Guid prescriptionId, Guid medicationId, string dosage, int duration, string? instructions = null)
         {
             if (prescriptionId == Guid.Empty)
                 throw new ArgumentException("Prescription ID is required.", nameof(prescriptionId));
-            if (string.IsNullOrWhiteSpace(medicationCode))
-                throw new ArgumentException("Medication Code is required.", nameof(medicationCode));
-            if (string.IsNullOrWhiteSpace(medicationName))
-                throw new ArgumentException("Medication Name is required.", nameof(medicationName));
+            if (medicationId == Guid.Empty)
+                throw new ArgumentException("Medication ID is required.", nameof(medicationId));
             if (string.IsNullOrWhiteSpace(dosage))
                 throw new ArgumentException("Dosage is required.", nameof(dosage));
             if (duration <= 0)
                 throw new ArgumentException("Duration must be greater than zero.", nameof(duration));
 
             PrescriptionId = prescriptionId;
-            MedicationCode = medicationCode;
-            MedicationName = medicationName;
+            MedicationId = medicationId;
             Dosage = dosage;
             Duration = duration;
             Instructions = instructions;
         }
 
+        public void UpdateDetails(Guid medicationId, string dosage, int duration, string? instructions = null)
+        {
+            if (Status == PrescriptionItemStatus.Dispensed)
+                throw new BusinessRuleViolationException("Can't update a dispensed medication.");
+
+            if (medicationId == Guid.Empty)
+                throw new ArgumentException("Medication ID is required.", nameof(medicationId));
+
+            if (string.IsNullOrWhiteSpace(dosage))
+                throw new ArgumentException("Dosage is required.", nameof(dosage));
+
+            if (duration <= 0)
+                throw new ArgumentException("Duration must be greater than zero.", nameof(duration));
+
+            MedicationId = medicationId;
+            Dosage = dosage;
+            Duration = duration;
+            Instructions = instructions;
+
+            MarkAsUpdated();
+        }
 
         public void Dispense(Guid pharmacistId)
         {
+            if (pharmacistId == Guid.Empty)
+                throw new ArgumentException("Pharmacist Id is required.", nameof(pharmacistId));
+
             if (Status == PrescriptionItemStatus.Dispensed)
                 throw new BusinessRuleViolationException("This Medication is already dispensed");
-            
+
 
             Status = PrescriptionItemStatus.Dispensed;
             DispensedByPharmacistId = pharmacistId;
@@ -66,7 +87,7 @@ namespace PulseID.Domain.Entities
 
         }
 
-        
+
 
 
 

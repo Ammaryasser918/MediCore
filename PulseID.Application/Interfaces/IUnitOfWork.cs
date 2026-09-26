@@ -28,6 +28,11 @@ namespace PulseID.Application.Interfaces
         IHospitalAdminRepository HospitalAdmin { get; }
         IPharmacyAdminRepository PharmacyAdmin { get; }
         IEmergencyContactRepository EmergencyContact { get; }
+        ILabRepository Labs { get; }
+        ILabTestRepository LabTests { get; }
+        ILabTestRequestRepository LabTestRequests { get; }
+        ILabTechnicianRepository LabTechnicians { get; }
+        IMedicationRepository Medications { get; }
 
         Task TrackAsAddedAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : BaseEntity;
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
