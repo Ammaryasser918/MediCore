@@ -16,17 +16,17 @@ namespace PulseID.Infrastructure.Persistence.Repositories
         }
 
         public async Task<IReadOnlyList<Notification>> GetByUserAsync(Guid userId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(n => n.UserId == userId)
+            => await _dbSet.Where(n => n.UserId == userId && !n.IsDeleted)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(cancellationToken);
 
         public async Task<IReadOnlyList<Notification>> GetUnreadByUserAsync(Guid userId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(n => n.UserId == userId && !n.IsRead)
+            => await _dbSet.Where(n => n.UserId == userId && !n.IsRead && !n.IsRead && !n.IsDeleted)
             .OrderByDescending(n => n.CreatedAt)
             .ToListAsync(cancellationToken);
 
         public Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken = default)
-            => _dbSet.CountAsync(n => n.UserId == userId && !n.IsRead, cancellationToken);
+            => _dbSet.CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsDeleted, cancellationToken);
 
     }
 }
