@@ -23,6 +23,11 @@ namespace PulseID.Application.Interfaces.IServices
 
         Task<OtpResultDto> RequestPharmacistRegistrationOtpAsync(RegisterPharmacistDto dto, CancellationToken cancellationToken = default);
         Task<AuthResultDto> VerifyPharmacistRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default);
+        
+        // Lab Technician Registration
+
+        Task<OtpResultDto> RequestLabTechnicianRegistrationOtpAsync(RegisterLabTechnicianDto dto, CancellationToken cancellationToken = default);
+        Task<AuthResultDto> VerifyLabTechnicianRegistrationAsync(string email, string otp, CancellationToken cancellationToken = default);
 
 
         // Common

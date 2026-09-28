@@ -7,6 +7,7 @@ public interface ILabTechnicianService
     Task<IReadOnlyList<LabTechnicianDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<LabTechnicianDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<LabTechnicianDto?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<LabTechnicianDto>> GetByLabAsync(Guid labId, CancellationToken cancellationToken = default);
 
@@ -16,9 +17,9 @@ public interface ILabTechnicianService
 
     Task TransferToLabAsync(Guid id, Guid labId, CancellationToken cancellationToken = default);
 
-    Task ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
+    Task ApproveAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default);
 
-    Task RejectAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RejectAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default);
 
     Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
 

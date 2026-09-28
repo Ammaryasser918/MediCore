@@ -16,14 +16,17 @@ namespace PulseID.Domain.Entities
 
         public string PhoneNumber { get; private set; } = default!;
         public string? PersonalImagePath { get; private set; }
-
+        public DateTime? DateOfBirth { get; private set; } 
         public LabTechnicianStatus Status { get; private set; } = LabTechnicianStatus.Pending;
 
-        public Guid LabId { get; private set; }
-        public Lab Lab { get; private set; } = default!;
+        public Guid? LabId { get; private set; }
+        public Lab? Lab { get; private set; } = default!;
 
-        public Guid? ApprovedByHospitalAdminId { get; private set; }
+        public Guid? ApprovedByLabAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+
+        public Guid? RejectedByLabAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
 
         LabTechnician() { }
 
@@ -34,7 +37,7 @@ namespace PulseID.Domain.Entities
             string licenseNumber,
             string? licenseDocumentPath,
             string phoneNumber,
-            Guid labId,
+            Guid? labId = null,
             string? personalImagePath = null)
         {
             if (userId == Guid.Empty)
@@ -82,27 +85,28 @@ namespace PulseID.Domain.Entities
             if (labHospitalId == Guid.Empty)
                 throw new ArgumentException("Lab Hospital Id is Required", nameof(labHospitalId));
 
-            if (ApprovedByHospitalAdminId.HasValue)
+            if (ApprovedByLabAdminId.HasValue)
                 throw new BusinessRuleViolationException("This technician is already approved.");
 
             if (string.IsNullOrWhiteSpace(LicenseNumber) &&
                 string.IsNullOrWhiteSpace(LicenseDocumentPath))
                 throw new BusinessRuleViolationException("Can't approve a technician without license details.");
 
-            ApprovedByHospitalAdminId = labHospitalId;
+            ApprovedByLabAdminId = labHospitalId;
             ApprovedAt = DateTime.UtcNow;
             Status = LabTechnicianStatus.Approved;
 
             MarkAsUpdated();
         }
 
-        public void Reject()
+        public void Reject(Guid labAdminId)
         {
             if (Status != LabTechnicianStatus.Pending)
                 throw new BusinessRuleViolationException("Can only reject pending technicians.");
 
+            RejectedByLabAdminId = labAdminId;
+            RejectedAt = DateTime.UtcNow;
             Status = LabTechnicianStatus.Rejected;
-
             MarkAsUpdated();
         }
 

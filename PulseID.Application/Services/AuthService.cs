@@ -15,6 +15,7 @@ using System.Security.Cryptography;
 using PulseID.Application.DTOs.OTP;
 using Microsoft.AspNetCore.DataProtection;
 using System.Text.Json;
+using PulseID.Domain.Common;
 
 namespace PulseID.Application.Services
 {
@@ -287,7 +288,7 @@ namespace PulseID.Application.Services
                 Email = dto.Email,
                 Purpose = OtpPurpose.Registration,
                 Channel = NotificationChannel.Email
-            };            
+            };
             
             var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
             if (!registrationResult.Success)
@@ -370,6 +371,119 @@ namespace PulseID.Application.Services
 
 
         }
+
+
+
+        // ========================== < Lab Technician Registration Section> =============================
+
+        public async Task<OtpResultDto> RequestLabTechnicianRegistrationOtpAsync(RegisterLabTechnicianDto dto, CancellationToken cancellationToken = default)
+        {
+            const string genericMessage = "If this email is available an OTP has been sent.";
+
+            var (isPasswordValid, passwordError) = await _identityService.ValidatePasswordsAsync(dto.Password);
+            if (!isPasswordValid)
+            {
+                return new OtpResultDto
+                {
+                    Success = false,
+                    Message = passwordError ?? "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one non-alphanumeric character."
+                };
+            }
+
+            if (await _identityService.EmailExistsAsync(dto.Email, cancellationToken))
+                return new OtpResultDto { Success = true, Message = genericMessage };
+
+            if (await _unitOfWork.LabTechnicians.ExistsByNationalIdAsync(dto.NationalId, cancellationToken))
+                return new OtpResultDto { Success = true, Message = genericMessage };
+
+
+            var requestDto = new RequestOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Channel = NotificationChannel.Email
+            };
+
+            var registrationResult = await _otpService.GenerateAndSendOtpAsync(requestDto, cancellationToken);
+            if (!registrationResult.Success)
+                return registrationResult;
+
+            var jsonDto = JsonSerializer.Serialize(dto);
+            var registrationToken = _protector.Protect(jsonDto);
+            registrationResult.RegistrationToken = registrationToken;
+
+            return registrationResult;
+
+
+        }
+
+
+        public async Task<AuthResultDto> VerifyLabTechnicianRegistrationAsync(string registrationToken, string otp, CancellationToken cancellationToken = default)
+        {
+            RegisterLabTechnicianDto? dto;
+            try
+            {
+                var jsonDto = _protector.Unprotect(registrationToken);
+                dto = JsonSerializer.Deserialize<RegisterLabTechnicianDto>(jsonDto);
+                if (dto is null)
+                    return new AuthResultDto { Success = false, Error = "Invalid registration Payload." };
+            }
+            catch (Exception)
+            {
+                return new AuthResultDto { Success = false, Error = "Registration session expired or token invalid." };
+            }
+
+
+            var verifyDto = new VerifyOtpDto
+            {
+                Email = dto.Email,
+                Purpose = OtpPurpose.Registration,
+                Otp = otp
+            };
+
+            var verification = await _otpService.VerifyOtpAsync(verifyDto, cancellationToken);
+            if (!verification.Success)
+                return new AuthResultDto { Success = false, Error = verification.Message ?? "Invalid or expired OTP." };
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+            try
+            {
+                var (created, userId, error) = await _identityService.CreateUserAsync(dto.Email, dto.Password, "LabTechnician", cancellationToken);
+
+                if (!created || userId == Guid.Empty)
+                    return new AuthResultDto { Success = false, Error = error ?? "Could not create the account." };
+
+                var labTechnician = new LabTechnician(
+                    userId,
+                    dto.FullName,
+                    dto.NationalId,
+                    dto.SyndicateNumber,
+                    dto.SyndicateDocumentPath,
+                    dto.PhoneNumber
+                    );
+
+                await _unitOfWork.LabTechnicians.AddAsync(labTechnician, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                var newAccessToken = _jwtTokenService.GenerateToken(userId, AppRoles.LabTechnician, dto.Email);
+                var newRefreshToken = _jwtTokenService.GenerateRefreshToken();
+
+                await _identityService.SaveRefreshTokenAsync(userId, newRefreshToken, DateTime.UtcNow.AddDays(10), cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return new AuthResultDto { Success = true, AccessToken = newAccessToken, RefreshToken = newRefreshToken };
+
+            }
+            catch (Exception)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return new AuthResultDto { Success = false, Error = "An error occurred during registration. Please try again." };
+            }
+
+
+
+        }
+
 
         // Common
 

@@ -49,7 +49,7 @@ public class LabTechnicianConfiguration : IEntityTypeConfiguration<LabTechnician
 
         builder.HasOne<ApplicationUser>()
             .WithMany()
-            .HasForeignKey(t => t.ApprovedByHospitalAdminId)
+            .HasForeignKey(t => t.ApprovedByLabAdminId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 

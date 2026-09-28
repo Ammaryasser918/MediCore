@@ -11,8 +11,10 @@ namespace PulseID.Domain.Common
         public const string SuperAdmin = "SuperAdmin";
         public const string HospitalAdmin = "HospitalAdmin";
         public const string PharmacyAdmin = "PharmacyAdmin";
+        public const string LabAdmin = "LabAdmin";
         public const string Doctor = "Doctor";
         public const string Patient = "Patient";
         public const string Pharmacist = "Pharmacist";
+        public const string LabTechnician = "LabTechnician";
     }
 }

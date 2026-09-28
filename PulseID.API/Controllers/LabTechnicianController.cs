@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using PulseID.Application.DTOs.Labs;
 using PulseID.Application.Interfaces.Services;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers;
 
@@ -26,6 +27,20 @@ public class LabTechnicianController : ControllerBase
     public async Task<ActionResult<LabTechnicianDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var technician = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+
+        if (technician is null)
+            return NotFound();
+
+        return Ok(technician);
+    }
+
+    [HttpGet("me")]
+    public async Task<ActionResult<LabTechnicianDto>> GetById(CancellationToken cancellationToken)
+    {
+        var Id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(Id, out var userId))
+            return Unauthorized("Can't identify the current user.");
+        var technician = await _labTechnicianService.GetByUserIdAsync(userId, cancellationToken);
 
         if (technician is null)
             return NotFound();
@@ -63,16 +78,16 @@ public class LabTechnicianController : ControllerBase
     }
 
     [HttpPut("{id:guid}/approve")]
-    public async Task<IActionResult> Approve(Guid id, [FromBody] Guid hospitalAdminId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Approve(Guid id, [FromBody] Guid labAdminId, CancellationToken cancellationToken)
     {
-        await _labTechnicianService.ApproveAsync(id, hospitalAdminId, cancellationToken);
+        await _labTechnicianService.ApproveAsync(id, labAdminId, cancellationToken);
         return NoContent();
     }
 
     [HttpPut("{id:guid}/reject")]
-    public async Task<IActionResult> Reject(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Reject(Guid id, [FromBody] Guid labAdminId, CancellationToken cancellationToken)
     {
-        await _labTechnicianService.RejectAsync(id, cancellationToken);
+        await _labTechnicianService.RejectAsync(id, labAdminId, cancellationToken);
         return NoContent();
     }
 

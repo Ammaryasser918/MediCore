@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Interfaces.Repositories;
+using PulseID.Application.Interfaces.Services;
 using PulseID.Application.Services;
 
 namespace PulseID.Application
@@ -31,6 +32,8 @@ namespace PulseID.Application
             services.AddScoped<IPharmacyAdminService, PharmacyAdminService>();
             services.AddScoped<IHospitalAdminService, HospitalAdminService>();
             services.AddScoped<IEmergencyContactService, EmergencyContactService>();
+            services.AddScoped<ILabTechnicianService, LabTechnicianService>();
+            services.AddScoped<IMedicationService, MedicationService>();
 
 
             services.AddScoped<IHospitalService, HospitalService>();

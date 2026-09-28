@@ -113,6 +113,34 @@ namespace PulseID.API.Controllers
         }
 
 
+        // ------ Lab Technician Registration --------
+
+        // POST: api/auth/lab-technician/register/request-otp
+        [HttpPost("lab-technician/register/request-otp")]
+        [EnableRateLimiting("AuthLimiter")]
+        public async Task<IActionResult> RequestLabTechnicianRegisterationOtp([FromBody] RegisterLabTechnicianDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _authService.RequestLabTechnicianRegistrationOtpAsync(dto, cancellationToken);
+            return Ok(new
+            {
+                message = result.Message,
+                registrationToken = result.RegistrationToken,
+                OTP = result.Otp
+            });
+        }
+
+        // POST: api/auth/lab-technician/register/verify
+        [HttpPost("lab-technician/register/verify")]
+        [EnableRateLimiting("AuthLimiter")]
+        public async Task<IActionResult> VerifyLabTechnicianRegisteration([FromBody] VerifyRegistrationDto dto, CancellationToken cancellationToken)
+        {
+            var result = await _authService.VerifyLabTechnicianRegistrationAsync(dto.RegistrationToken, dto.Otp, cancellationToken);
+            if (!result.Success)
+                return BadRequest(new { message = result.Error });
+            return Ok(new { accessToken = result.AccessToken, refreshToken = result.RefreshToken});
+        }
+
+
         // ------  Common  --------
 
         // POST: api/auth/login/request-otp

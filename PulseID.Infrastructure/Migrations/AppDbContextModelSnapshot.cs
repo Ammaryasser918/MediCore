@@ -635,10 +635,13 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ApprovedByHospitalAdminId")
+                    b.Property<Guid?>("ApprovedByLabAdminId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FullName")
@@ -649,7 +652,7 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("LabId")
+                    b.Property<Guid?>("LabId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("LicenseDocumentPath")
@@ -672,6 +675,12 @@ namespace PulseID.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RejectedByLabAdminId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -683,7 +692,7 @@ namespace PulseID.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovedByHospitalAdminId");
+                    b.HasIndex("ApprovedByLabAdminId");
 
                     b.HasIndex("LabId");
 
@@ -1638,6 +1647,17 @@ namespace PulseID.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.HospitalAdmin", b =>
+                {
+                    b.HasOne("PulseID.Domain.Entities.Hospital", "Hospital")
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Hospital");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Lab", b =>
                 {
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
@@ -1650,14 +1670,13 @@ namespace PulseID.Infrastructure.Migrations
                 {
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
-                        .HasForeignKey("ApprovedByHospitalAdminId")
+                        .HasForeignKey("ApprovedByLabAdminId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PulseID.Domain.Entities.Lab", "Lab")
                         .WithMany("LabTechnicians")
                         .HasForeignKey("LabId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
@@ -1700,17 +1719,6 @@ namespace PulseID.Infrastructure.Migrations
                     b.Navigation("LabTest");
 
                     b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("PulseID.Domain.Entities.HospitalAdmin", b =>
-                {
-                    b.HasOne("PulseID.Domain.Entities.Hospital", "Hospital")
-                        .WithMany()
-                        .HasForeignKey("HospitalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Hospital");
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.MedicalFile", b =>

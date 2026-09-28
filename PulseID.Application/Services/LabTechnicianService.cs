@@ -1,4 +1,5 @@
 using PulseID.Application.Common.Exceptions;
+using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Labs;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.Repositories;
@@ -10,30 +11,50 @@ namespace PulseID.Application.Services;
 public class LabTechnicianService : ILabTechnicianService
 {
     readonly IUnitOfWork _unitOfWork;
+    readonly IIdentityService _identityService;
 
-    public LabTechnicianService(IUnitOfWork unitOfWork)
+    public LabTechnicianService(IUnitOfWork unitOfWork, IIdentityService identityService)
     {
         _unitOfWork = unitOfWork;
+        _identityService = identityService;
     }
 
     public async Task<IReadOnlyList<LabTechnicianDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var technicians = await _unitOfWork.LabTechnicians.GetAllWithLabAsync(cancellationToken);
-
-        return technicians.Select(ToDto).ToList();
+        var technicianDtos = new List<LabTechnicianDto>();
+        foreach (var technician in  technicians)
+        {
+            var email = await _identityService.GetEmailByUserIdAsync(technician.UserId, cancellationToken);
+            technicianDtos.Add(ToDto(technician, email));
+        }
+        return technicianDtos;
     }
 
     public async Task<LabTechnicianDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var technician = await _unitOfWork.LabTechnicians.GetWithLabAsync(id, cancellationToken);
-        return technician is null ? null : ToDto(technician);
+        var technician = await _unitOfWork.LabTechnicians.GetWithLabAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(LabTechnician), id);
+        var email = await _identityService.GetEmailByUserIdAsync(technician.UserId, cancellationToken);
+        return technician is null ? null : ToDto(technician, email);
+    }
+    
+    public async Task<LabTechnicianDto?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var technician = await _unitOfWork.LabTechnicians.GetByUserIdAsync(userId, cancellationToken) ?? throw new NotFoundException(nameof(LabTechnician), userId);
+        var email = await _identityService.GetEmailByUserIdAsync(userId, cancellationToken);
+        return technician is null ? null : ToDto(technician, email);
     }
 
     public async Task<IReadOnlyList<LabTechnicianDto>> GetByLabAsync(Guid labId, CancellationToken cancellationToken = default)
     {
         var technicians = await _unitOfWork.LabTechnicians.GetByLabAsync(labId, cancellationToken);
-
-        return technicians.Select(ToDto).ToList();
+        var technicianDtos = new List<LabTechnicianDto>();
+        foreach (var technician in technicians)
+        {
+            var email = await _identityService.GetEmailByUserIdAsync(technician.UserId, cancellationToken);
+            technicianDtos.Add(ToDto(technician, email));
+        }
+        return technicianDtos;
     }
 
     public async Task<LabTechnicianDto> CreateAsync(CreateLabTechnicianDto dto, CancellationToken cancellationToken = default)
@@ -55,8 +76,8 @@ public class LabTechnicianService : ILabTechnicianService
 
         if (createdTechnician is null)
             throw new NotFoundException($"Lab technician with id '{technician.Id}' was not found.");
-
-        return ToDto(createdTechnician);
+        var email = await _identityService.GetEmailByUserIdAsync(createdTechnician.UserId);
+        return ToDto(createdTechnician, email);
     }
 
     public async Task UpdateAsync(Guid id, UpdateLabTechnicianDto dto, CancellationToken cancellationToken = default)
@@ -86,28 +107,28 @@ public class LabTechnicianService : ILabTechnicianService
         _unitOfWork.LabTechnicians.Update(technician);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
-
-    public async Task ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default)
+    
+    public async Task ApproveAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default)
     {
         var technician = await _unitOfWork.LabTechnicians.GetByIdAsync(id, cancellationToken);
 
         if (technician is null)
             throw new NotFoundException($"Lab technician with id '{id}' was not found.");
 
-        technician.Approve(hospitalAdminId);
+        technician.Approve(labAdminId);
 
         _unitOfWork.LabTechnicians.Update(technician);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task RejectAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task RejectAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default)
     {
         var technician = await _unitOfWork.LabTechnicians.GetByIdAsync(id, cancellationToken);
 
         if (technician is null)
             throw new NotFoundException($"Lab technician with id '{id}' was not found.");
 
-        technician.Reject();
+        technician.Reject(labAdminId);
 
         _unitOfWork.LabTechnicians.Update(technician);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -150,12 +171,12 @@ public class LabTechnicianService : ILabTechnicianService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    static LabTechnicianDto ToDto(LabTechnician technician)
+    static LabTechnicianDto ToDto(LabTechnician technician, string email)
     {
         return new LabTechnicianDto
         {
             Id = technician.Id,
-            UserId = technician.UserId,
+            Email = email,
             FullName = technician.FullName,
             NationalId = technician.NationalId,
             LicenseNumber = technician.LicenseNumber,
@@ -164,9 +185,11 @@ public class LabTechnicianService : ILabTechnicianService
             PersonalImagePath = technician.PersonalImagePath,
             Status = technician.Status,
             LabId = technician.LabId,
-            LabName = technician.Lab.Name,
-            ApprovedByHospitalAdminId = technician.ApprovedByHospitalAdminId,
+            LabName = technician.Lab?.Name,
+            ApprovedByLabAdminId = technician.ApprovedByLabAdminId,
             ApprovedAt = technician.ApprovedAt,
+            RejectedByLabAdminId = technician.RejectedByLabAdminId,
+            RejectedAt = technician.RejectedAt,
             CreatedAt = technician.CreatedAt,
             UpdatedAt = technician.UpdatedAt
         };
