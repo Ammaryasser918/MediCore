@@ -90,6 +90,7 @@ public class LabTechnicianService : ILabTechnicianService
 
         technician.UpdatePersonalDetails(
             dto.PhoneNumber,
+            dto.DateOfBirth,
             dto.PersonalImagePath);
 
         _unitOfWork.LabTechnicians.Update(technician);
