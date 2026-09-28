@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Labs;
 using PulseID.Application.Interfaces.Services;
 
@@ -65,4 +67,31 @@ public class LabTestController : ControllerBase
         await _labTestService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
+
+    [HttpDelete("{id:guid}/hard-delete")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+    {
+        await _labTestService.HardDeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("deleted")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [EnableRateLimiting("BigDataLimiter")]
+    public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+    {
+        var result = await _labTestService.GetDeletedLabTestsAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [EnableRateLimiting("SmallDataLimiter")]
+    public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        await _labTestService.RestoreLabTestAsync(id, cancellationToken);
+        return Ok(new { Message = "Record restored successfully." });
+    }
+
 }

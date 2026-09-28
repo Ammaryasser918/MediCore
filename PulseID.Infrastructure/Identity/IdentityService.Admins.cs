@@ -1,4 +1,5 @@
 ﻿using PulseID.Application.DTOs.HospitalAdmin;
+using PulseID.Application.DTOs.LabAdminDto;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Application.DTOs.PharmacyAdmin;
 using PulseID.Application.Interfaces;
@@ -39,6 +40,19 @@ namespace PulseID.Infrastructure.Identity
                 throw new Exception("Failed to create user : " + string.Join(", ", result.Errors.Select(e => e.Description)));
 
             await _userManager.AddToRoleAsync(user, AppRoles.HospitalAdmin);
+
+            return user.Id;
+        }
+
+        public async Task<Guid> CreateLabAdminAsync(CreateLabAdminDto dto, CancellationToken cancellationToken = default)
+        {
+            var user = new ApplicationUser { UserName = dto.Email, Email = dto.Email, EmailConfirmed = true };
+            var result = await _userManager.CreateAsync(user, dto.Password);
+
+            if (!result.Succeeded)
+                throw new Exception("Failed to create user : " + string.Join(", ", result.Errors.Select(e => e.Description)));
+
+            await _userManager.AddToRoleAsync(user, AppRoles.LabAdmin);
 
             return user.Id;
         }

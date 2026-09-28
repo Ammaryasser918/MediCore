@@ -460,7 +460,10 @@ namespace PulseID.Application.Services
                     dto.NationalId,
                     dto.SyndicateNumber,
                     dto.SyndicateDocumentPath,
-                    dto.PhoneNumber
+                    dto.PhoneNumber,
+                    dto.DateOfBirth,
+                    dto.LabId,
+                    dto.PersonalImagePath
                     );
 
                 await _unitOfWork.LabTechnicians.AddAsync(labTechnician, cancellationToken);

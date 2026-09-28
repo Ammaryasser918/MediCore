@@ -41,7 +41,7 @@ public class LabConfiguration : IEntityTypeConfiguration<Lab>
 
         builder.HasOne<ApplicationUser>()
             .WithMany()
-            .HasForeignKey(l => l.ApprovedByHospitalAdminId)
+            .HasForeignKey(l => l.ApprovedByLabAdminId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
     }

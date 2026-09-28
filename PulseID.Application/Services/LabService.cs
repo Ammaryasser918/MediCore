@@ -1,4 +1,5 @@
 using PulseID.Application.Common.Exceptions;
+using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Labs;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.Repositories;
@@ -10,10 +11,12 @@ namespace PulseID.Application.Services;
 public class LabService : ILabService
 {
     readonly IUnitOfWork _unitOfWork;
+    readonly IIdentityService _identityService;
 
-    public LabService(IUnitOfWork unitOfWork)
+    public LabService(IUnitOfWork unitOfWork, IIdentityService identityService)
     {
         _unitOfWork = unitOfWork;
+        _identityService = identityService;
     }
 
     public async Task<IReadOnlyList<LabDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -97,14 +100,14 @@ public class LabService : ILabService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task RejectAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task RejectAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default)
     {
         var lab = await _unitOfWork.Labs.GetByIdAsync(id, cancellationToken);
 
         if (lab is null)
             throw new NotFoundException($"Lab with id '{id}' was not found.");
 
-        lab.Reject();
+        lab.Reject(labAdminId);
 
         _unitOfWork.Labs.Update(lab);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -147,6 +150,51 @@ public class LabService : ILabService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task HardDeleteAsync(Guid labId,  CancellationToken cancellationToken = default)
+    {
+        var lab = await _unitOfWork.Labs.GetByIdWithDeletedAsync(labId, cancellationToken);
+        if (lab is null)
+            throw new NotFoundException("Lab not found.");
+
+        using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var labTechs = await _unitOfWork.LabTechnicians.GetByLabAsync(labId, cancellationToken);
+            foreach (var labTech in labTechs)
+            {
+                labTech.SoftDelete();
+            }
+
+            _unitOfWork.Labs.HardDelete(lab);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+
+    }
+    public async Task<IReadOnlyList<LabDto>> GetDeletedLabsAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedLabs = await _unitOfWork.Labs.GetDeletedAsync(cancellationToken);
+
+        return deletedLabs.Select(ToDto).ToList();
+    }
+    public async Task RestoreLabAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var lab = await _unitOfWork.Labs.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (lab is null)
+            throw new NotFoundException("Deleted lab record not found.");
+
+        _unitOfWork.Labs.Restore(lab);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
     static LabDto ToDto(Lab lab)
     {
         return new LabDto
@@ -158,7 +206,7 @@ public class LabService : ILabService
             LicenseNumber = lab.LicenseNumber,
             LicenseDocumentPath = lab.LicenseDocumentPath,
             Status = lab.Status,
-            ApprovedByHospitalAdminId = lab.ApprovedByHospitalAdminId,
+            ApprovedByHospitalAdminId = lab.ApprovedByLabAdminId,
             ApprovedAt = lab.ApprovedAt,
             CreatedAt = lab.CreatedAt,
             UpdatedAt = lab.UpdatedAt

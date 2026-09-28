@@ -66,6 +66,7 @@ public class LabTechnicianService : ILabTechnicianService
             dto.LicenseNumber,
             dto.LicenseDocumentPath,
             dto.PhoneNumber,
+            dto.DateOfBirth,
             dto.LabId,
             dto.PersonalImagePath);
 
@@ -168,6 +169,56 @@ public class LabTechnicianService : ILabTechnicianService
             throw new NotFoundException($"Lab technician with id '{id}' was not found.");
 
         _unitOfWork.LabTechnicians.Delete(technician);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var technician = await _unitOfWork.LabTechnicians.GetByIdWithDeletedAsync(id, cancellationToken);
+
+        if (technician is null)
+            throw new NotFoundException($"Lab technician with id '{id}' was not found.");
+        using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            _unitOfWork.LabTechnicians.HardDelete(technician);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var isDeleted = await _identityService.DeleteUserAsync(technician.UserId, cancellationToken);
+            if (isDeleted)
+                throw new Exception("Failed to delete user account.");
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        
+    }
+
+    public async Task<IReadOnlyList<LabTechnicianDto>> GetDeletedTechniciansAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedTechnicians = await _unitOfWork.LabTechnicians.GetDeletedAsync(cancellationToken);
+        var technicianDtos = new List<LabTechnicianDto>();
+        foreach (var technician in deletedTechnicians)
+        {
+            var email = await _identityService.GetEmailByUserIdAsync(technician.UserId, cancellationToken);
+            technicianDtos.Add(ToDto(technician, email));
+        }
+        return technicianDtos;
+    }
+
+    public async Task RestoreTechnicianAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var technician = await _unitOfWork.LabTechnicians.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (technician is null)
+            throw new NotFoundException("Deleted lab technician record not found.");
+
+        _unitOfWork.LabTechnicians.Restore(technician);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 

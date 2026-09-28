@@ -38,6 +38,7 @@ public class CreateLabTechnicianDto
     public string LicenseNumber { get; set; } = default!;
     public string? LicenseDocumentPath { get; set; }
     public string PhoneNumber { get; set; } = default!;
+    public DateTime DateOfBirth { get; set; }
     public Guid? LabId { get; set; }
     public string? PersonalImagePath { get; set; }
 }
@@ -45,5 +46,6 @@ public class CreateLabTechnicianDto
 public class UpdateLabTechnicianDto
 {
     public string PhoneNumber { get; set; } = default!;
+    public DateTime DateOfBirth { get; set; }
     public string? PersonalImagePath { get; set; }
 }

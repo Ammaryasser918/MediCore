@@ -17,6 +17,7 @@ namespace PulseID.Application.DTOs.Auth
         public string SyndicateDocumentPath { get; set; } = default!;
         public string PhoneNumber { get; set; } = default!;
         public DateTime DateOfBirth { get; set; }
+        public Guid? LabId { get; set; }
         public string? PersonalImagePath { get; set; }
     }
 }

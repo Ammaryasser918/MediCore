@@ -37,6 +37,7 @@ namespace PulseID.Domain.Entities
             string licenseNumber,
             string? licenseDocumentPath,
             string phoneNumber,
+            DateTime? dateOfBirth,
             Guid? labId = null,
             string? personalImagePath = null)
         {
@@ -61,6 +62,7 @@ namespace PulseID.Domain.Entities
             LicenseNumber = licenseNumber;
             LicenseDocumentPath = licenseDocumentPath;
             PhoneNumber = phoneNumber;
+            DateOfBirth = dateOfBirth;
             LabId = labId;
             PersonalImagePath = personalImagePath;
 

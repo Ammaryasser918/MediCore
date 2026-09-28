@@ -18,11 +18,14 @@ public interface ILabService
 
     Task ApproveAsync(Guid id, Guid hospitalAdminId, CancellationToken cancellationToken = default);
 
-    Task RejectAsync(Guid id, CancellationToken cancellationToken = default);
+    Task RejectAsync(Guid id, Guid labAdminId, CancellationToken cancellationToken = default);
 
     Task DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task HardDeleteAsync(Guid labId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<LabDto>> GetDeletedLabsAsync(CancellationToken cancellationToken = default);
+    Task RestoreLabAsync(Guid id, CancellationToken cancellationToken = default);
 }

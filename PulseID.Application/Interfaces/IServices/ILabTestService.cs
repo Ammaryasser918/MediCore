@@ -15,4 +15,11 @@ public interface ILabTestService
     Task<LabTestDto> UpdateAsync(Guid id, UpdateLabTestDto dto, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LabTestDto>> GetDeletedLabTestsAsync(CancellationToken cancellationToken = default);
+
+    Task RestoreLabTestAsync(Guid id, CancellationToken cancellationToken = default);
+
 }

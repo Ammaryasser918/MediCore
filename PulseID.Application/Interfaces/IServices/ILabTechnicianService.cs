@@ -26,4 +26,9 @@ public interface ILabTechnicianService
     Task ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<LabTechnicianDto>> GetDeletedTechniciansAsync(CancellationToken cancellationToken = default);
+
+    Task RestoreTechnicianAsync(Guid id, CancellationToken cancellationToken = default);
 }

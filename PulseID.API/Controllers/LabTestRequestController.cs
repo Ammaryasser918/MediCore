@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Labs;
+using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Interfaces.Services;
 using PulseID.Domain.Enums;
 
@@ -10,13 +13,23 @@ namespace PulseID.API.Controllers;
 public class LabTestRequestController : ControllerBase
 {
     readonly ILabTestRequestService _labTestRequestService;
+    readonly IAuthorizationService _authorizationService;
+    readonly IPatientService _patientService;
+    readonly IDoctorService _doctorService;
 
-    public LabTestRequestController(ILabTestRequestService labTestRequestService)
+    public LabTestRequestController(ILabTestRequestService labTestRequestService, IAuthorizationService authorizationService, 
+        IPatientService patientService, IDoctorService doctorService)
     {
         _labTestRequestService = labTestRequestService;
+        _authorizationService = authorizationService;
+        _patientService = patientService;
+        _doctorService = doctorService;
     }
 
     [HttpGet]
+    [Authorize(Roles = "LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<LabTestRequestDto>>> GetAll(CancellationToken cancellationToken)
     {
         var requests = await _labTestRequestService.GetAllAsync(cancellationToken);
@@ -24,6 +37,11 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Patient,Doctor,LabTechnician,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("SmallDataLimiter")]
     public async Task<ActionResult<LabTestRequestDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var request = await _labTestRequestService.GetByIdAsync(id, cancellationToken);
@@ -35,6 +53,10 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpGet("by-patient/{patientId:guid}")]
+    [Authorize(Roles = "Patient,Doctor,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<LabTestRequestDto>>> GetByPatient(Guid patientId, CancellationToken cancellationToken)
     {
         var requests = await _labTestRequestService.GetByPatientAsync(patientId, cancellationToken);
@@ -42,6 +64,10 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpGet("by-doctor/{doctorId:guid}")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<LabTestRequestDto>>> GetByDoctor(Guid doctorId, CancellationToken cancellationToken)
     {
         var requests = await _labTestRequestService.GetByDoctorAsync(doctorId, cancellationToken);
@@ -49,6 +75,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpGet("by-lab/{labId:guid}")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<LabTestRequestDto>>> GetByLab(Guid labId, CancellationToken cancellationToken)
     {
         var requests = await _labTestRequestService.GetByLabAsync(labId, cancellationToken);
@@ -56,6 +85,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpGet("by-status/{status}")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<LabTestRequestDto>>> GetByStatus(LabTestRequestStatus status, CancellationToken cancellationToken)
     {
         var requests = await _labTestRequestService.GetByStatusAsync(status, cancellationToken);
@@ -63,6 +95,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "Doctor,SuperAdmin")]
     public async Task<ActionResult<LabTestRequestDto>> Create(CreateLabTestRequestDto dto, CancellationToken cancellationToken)
     {
         var request = await _labTestRequestService.CreateAsync(dto, cancellationToken);
@@ -71,6 +106,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
     public async Task<ActionResult<LabTestRequestDto>> Update(Guid id, UpdateLabTestRequestDto dto, CancellationToken cancellationToken)
     {
         var request = await _labTestRequestService.UpdateAsync(id, dto, cancellationToken);
@@ -78,6 +116,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/assign-lab/{labId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "Doctor,LabAdmin,HospitalAdmin,SuperAdmin")]
     public async Task<IActionResult> AssignLab(Guid id, Guid labId, CancellationToken cancellationToken)
     {
         await _labTestRequestService.AssignLabAsync(id, labId, cancellationToken);
@@ -85,6 +126,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/send-to-lab")]
+    [Authorize(Roles = "Doctor,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SendToLab(Guid id, CancellationToken cancellationToken)
     {
         await _labTestRequestService.SendToLabAsync(id, cancellationToken);
@@ -92,6 +136,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/collect-sample")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "LabTechnician,LabAdmin,SuperAdmin")]
     public async Task<IActionResult> CollectSample(Guid id, CancellationToken cancellationToken)
     {
         await _labTestRequestService.CollectSampleAsync(id, cancellationToken);
@@ -99,6 +146,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/start-processing")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> StartProcessing(Guid id, CancellationToken cancellationToken)
     {
         await _labTestRequestService.StartProcessingAsync(id, cancellationToken);
@@ -106,6 +156,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/upload-result")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadResult(Guid id, [FromBody] string resultFileUrl, CancellationToken cancellationToken)
     {
         await _labTestRequestService.UploadResultAsync(id, resultFileUrl, cancellationToken);
@@ -113,6 +166,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/upload-patient-result")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadPatientResult(Guid id, [FromBody] string resultFileUrl, CancellationToken cancellationToken)
     {
         await _labTestRequestService.UploadPatientResultAsync(id, resultFileUrl, cancellationToken);
@@ -120,6 +176,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpPut("{id:guid}/reject")]
+    [Authorize(Roles = "LabTechnician,LabAdmin,HospitalAdmin,SuperAdmin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Reject(Guid id, CancellationToken cancellationToken)
     {
         await _labTestRequestService.RejectAsync(id, cancellationToken);
@@ -127,6 +186,9 @@ public class LabTestRequestController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _labTestRequestService.DeleteAsync(id, cancellationToken);

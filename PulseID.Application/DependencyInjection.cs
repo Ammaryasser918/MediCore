@@ -34,6 +34,10 @@ namespace PulseID.Application
             services.AddScoped<IEmergencyContactService, EmergencyContactService>();
             services.AddScoped<ILabTechnicianService, LabTechnicianService>();
             services.AddScoped<IMedicationService, MedicationService>();
+            services.AddScoped<ILabAdminService, LabAdminService>();
+            services.AddScoped<ILabService, LabService>();
+            services.AddScoped<ILabTestService, LabTestService>();
+            services.AddScoped<ILabTestRequestService, LabTestRequestService>();
 
 
             services.AddScoped<IHospitalService, HospitalService>();

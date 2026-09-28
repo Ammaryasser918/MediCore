@@ -586,7 +586,7 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("ApprovedByHospitalAdminId")
+                    b.Property<Guid?>("ApprovedByLabAdminId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -613,6 +613,12 @@ namespace PulseID.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RejectedByLabAdminId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -621,7 +627,7 @@ namespace PulseID.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ApprovedByHospitalAdminId");
+                    b.HasIndex("ApprovedByLabAdminId");
 
                     b.ToTable("Labs", (string)null);
                 });
@@ -1662,7 +1668,7 @@ namespace PulseID.Infrastructure.Migrations
                 {
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
-                        .HasForeignKey("ApprovedByHospitalAdminId")
+                        .HasForeignKey("ApprovedByLabAdminId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 

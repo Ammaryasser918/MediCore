@@ -15,8 +15,10 @@ namespace PulseID.Domain.Entities
 
         public LabStatus Status { get; private set; } = LabStatus.Pending;
 
-        public Guid? ApprovedByHospitalAdminId { get; private set; }
+        public Guid? ApprovedByLabAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+        public Guid? RejectedByLabAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
 
         readonly List<LabTechnician> _labTechnicians = new();
         public IReadOnlyCollection<LabTechnician> LabTechnicians => _labTechnicians.AsReadOnly();
@@ -82,7 +84,7 @@ namespace PulseID.Domain.Entities
             LicenseDocumentPath = documentPath;
 
             Status = LabStatus.Pending;
-            ApprovedByHospitalAdminId = null;
+            ApprovedByLabAdminId = null;
             ApprovedAt = null;
 
             MarkAsUpdated();
@@ -93,7 +95,7 @@ namespace PulseID.Domain.Entities
             if (adminId == Guid.Empty)
                 throw new ArgumentException("Admin Id is required to approve a lab.", nameof(adminId));
 
-            if (ApprovedByHospitalAdminId.HasValue)
+            if (ApprovedByLabAdminId.HasValue)
                 throw new BusinessRuleViolationException("This lab is already approved.");
 
             if (string.IsNullOrWhiteSpace(LicenseNumber) &&
@@ -103,19 +105,24 @@ namespace PulseID.Domain.Entities
                     "Can't approve a lab without license details.");
             }
 
-            ApprovedByHospitalAdminId = adminId;
+            ApprovedByLabAdminId = adminId;
             ApprovedAt = DateTime.UtcNow;
             Status = LabStatus.Approved;
 
             MarkAsUpdated();
         }
 
-        public void Reject()
+        public void Reject(Guid adminId)
         {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to approve a lab.", nameof(adminId));
+
             if (Status != LabStatus.Pending)
                 throw new BusinessRuleViolationException(
                     "Can only reject pending labs.");
 
+            RejectedByLabAdminId = adminId;
+            RejectedAt = DateTime.UtcNow;
             Status = LabStatus.Rejected;
 
             MarkAsUpdated();

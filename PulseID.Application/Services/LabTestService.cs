@@ -79,6 +79,36 @@ public class LabTestService : ILabTestService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var test = await _unitOfWork.LabTests.GetByIdWithDeletedAsync(id, cancellationToken);
+
+        if (test is null)
+            throw new NotFoundException($"Lab test with id '{id}' was not found.");
+
+        _unitOfWork.LabTests.HardDelete(test);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<LabTestDto>> GetDeletedLabTestsAsync(CancellationToken cancellationToken = default)
+    {
+        var deletedTests = await _unitOfWork.LabTests.GetDeletedAsync(cancellationToken);
+
+        return deletedTests.Select(ToDto).ToList();
+    }
+
+    public async Task RestoreLabTestAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var test = await _unitOfWork.LabTests.GetDeletedByIdAsync(id, cancellationToken);
+
+        if (test is null)
+            throw new NotFoundException("Deleted lab test record not found.");
+
+        _unitOfWork.LabTests.Restore(test);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+
     static LabTestDto ToDto(LabTest test)
     {
         return new LabTestDto

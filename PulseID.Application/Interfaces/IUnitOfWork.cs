@@ -27,6 +27,7 @@ namespace PulseID.Application.Interfaces
         IChronicDiseaseRepository ChronicDiseases { get; }
         IHospitalAdminRepository HospitalAdmin { get; }
         IPharmacyAdminRepository PharmacyAdmin { get; }
+        ILabAdminRepository LabAdmin { get; }
         IEmergencyContactRepository EmergencyContact { get; }
         ILabRepository Labs { get; }
         ILabTestRepository LabTests { get; }

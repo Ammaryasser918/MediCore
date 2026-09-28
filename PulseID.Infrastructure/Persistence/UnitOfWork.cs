@@ -30,6 +30,7 @@ namespace PulseID.Infrastructure.Persistence
         IChronicDiseaseRepository? _chronicDiseases;
         IHospitalAdminRepository? _hospitalAdmin;
         IPharmacyAdminRepository? _pharmacyAdmin;
+        ILabAdminRepository? _labAdmin;
         IEmergencyContactRepository? _emergencyContact;
         ILabRepository? _labs;
         ILabTestRepository? _labTests;
@@ -61,6 +62,7 @@ namespace PulseID.Infrastructure.Persistence
         public IChronicDiseaseRepository ChronicDiseases => _chronicDiseases ??= new ChronicDiseaseRepository(_context);
         public IHospitalAdminRepository HospitalAdmin => _hospitalAdmin ??= new HospitalAdminRepository(_context);
         public IPharmacyAdminRepository PharmacyAdmin => _pharmacyAdmin ??= new PharmaicyAdminRepository(_context);
+        public ILabAdminRepository LabAdmin => _labAdmin ??= new LabAdminRepository(_context);
         public IEmergencyContactRepository EmergencyContact => _emergencyContact ??= new EmergencyContactRepository(_context);
 
         public ILabRepository Labs => _labs ??= new LabRepository(_context);
