@@ -122,7 +122,7 @@ namespace PulseID.Application.Services
         public async Task<PharmacistDto> UpdatePharmacistDetailsAsync(Guid id, UpdatePharmacistDto dto, CancellationToken cancellationToken = default)
         {
             var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
-            pharmacist.UpdatePersonalDetails(dto.PhoneNumber, dto.DateOfBirth);
+            pharmacist.UpdatePersonalDetails(dto.FullName, dto.NationalId, dto.PhoneNumber, dto.DateOfBirth);
             _unitOfWork.Pharmacists.Update(pharmacist);
             await _unitOfWork.SaveChangesAsync();
             var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,6 +24,7 @@ namespace PulseID.Domain.Entities
         public BloodType? BloodType { get; set; }
         public string PhoneNumber { get; private set; } = default!;
         public string? Address { get; private set; }
+        public string? PersonalImagePath { get; private set; }
 
 
         // ================================= < Collections Section > ======================================
@@ -54,7 +56,7 @@ namespace PulseID.Domain.Entities
         Patient() { }
 
         public Patient(Guid userId, string nationalId, string fullName, DateTime dateOfBirth,
-            Gender gender, string phoneNumber, BloodType? bloodType = null, string? address = null)
+            Gender gender, string phoneNumber, BloodType? bloodType = null, string? address = null, string? personalImagePath = null)
         {
             if (userId == Guid.Empty)
                 throw new ArgumentException("User Id is required", nameof(userId));
@@ -75,6 +77,7 @@ namespace PulseID.Domain.Entities
             PhoneNumber = phoneNumber;
             BloodType = bloodType;
             Address = address;
+            PersonalImagePath = personalImagePath;
         }
 
 
@@ -84,13 +87,17 @@ namespace PulseID.Domain.Entities
         // ================================ < Methods Section > ======================================
 
 
-        public void UpdateContactInfo(string phoneNumber, string? address)
+        public void UpdatePatientInfo(string fullName, string nationalId, string phoneNumber, Gender gender, 
+            DateTime dateOfBirth, BloodType? bloodType = null, string? address = null, string? personalImagePath = null)
         {
-            if (string.IsNullOrWhiteSpace(phoneNumber))
-                throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
-
+            FullName = fullName;
+            NationalId = nationalId;
             PhoneNumber = phoneNumber;
+            Gender = gender;
+            DateOfBirth = dateOfBirth;
+            BloodType = bloodType;
             Address = address;
+            PersonalImagePath = personalImagePath;
             MarkAsUpdated();
 
         }

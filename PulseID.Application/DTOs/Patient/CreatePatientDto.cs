@@ -18,5 +18,6 @@ namespace PulseID.Application.DTOs.Patient
         public string PhoneNumber { get; set; } = default!;
         public BloodType? BloodType { get; set; }
         public string? Address { get; set; }
+        public string? PersonalImagePath { get; set; } 
     }
 }

@@ -94,7 +94,8 @@ namespace PulseID.Application.Services
                 patientDto.Gender,
                 patientDto.PhoneNumber,
                 patientDto.BloodType,
-                patientDto.Address
+                patientDto.Address,
+                patientDto.PersonalImagePath
                 );
 
             await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
@@ -105,10 +106,8 @@ namespace PulseID.Application.Services
         public async Task<PatientDto> UpdateAsync(Guid id, UpdatePatientDto patientDto, CancellationToken cancellationToken = default)
         {
             var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
-            patient.UpdateContactInfo(patientDto.PhoneNumber, patientDto.Address);
-            patient.Gender = patientDto.Gender;
-            if (patientDto.BloodType.HasValue)
-                patient.SetBloodType(patientDto.BloodType.Value);
+            patient.UpdatePatientInfo(patientDto.FullName, patientDto.NationalId, patientDto.PhoneNumber, patientDto.Gender, patientDto.DateOfBirth,
+                patientDto.BloodType, patientDto.Address, patientDto.PersonalImagePath);
 
             _unitOfWork.Patients.Update(patient);
             await _unitOfWork.SaveChangesAsync();

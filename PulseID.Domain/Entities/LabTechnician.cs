@@ -69,11 +69,12 @@ namespace PulseID.Domain.Entities
             Status = LabTechnicianStatus.Pending;
         }
 
-        public void UpdatePersonalDetails(string phoneNumber, DateTime dateOfBirth, string? personalImagePath)
+        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, DateTime dateOfBirth, string? personalImagePath)
         {
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
-
+            FullName = fullName;
+            NationalId = nationalId;
             PhoneNumber = phoneNumber;
             DateOfBirth = dateOfBirth;
 

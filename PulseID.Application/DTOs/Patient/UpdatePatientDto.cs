@@ -9,9 +9,13 @@ namespace PulseID.Application.DTOs.Patient
 {
     public class UpdatePatientDto
     {
+        public string FullName { get; set; } = default!;
+        public string NationalId { get; set; } = default!;
         public string PhoneNumber { get; set; } = default!;
         public string? Address { get; set; }
         public Gender Gender { get; set; } 
         public BloodType? BloodType { get; set; }
+        public DateTime DateOfBirth { get; set; }
+        public string? PersonalImagePath { get; set; }
     }
 }

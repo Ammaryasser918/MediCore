@@ -133,7 +133,7 @@ namespace PulseID.Application.Services
         public async Task<DoctorDto> UpdateAsync(Guid id, UpdateDoctorDto dto, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.UpdatePersonalDetails(dto.PhoneNumber, dto.Specialization, dto.DateOfBirth, dto.PersonalImagePath);
+            doctor.UpdatePersonalDetails(dto.FullName, dto.NationalId, dto.PhoneNumber, dto.Specialization, dto.DateOfBirth, dto.PersonalImagePath);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync();
             var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);

@@ -89,6 +89,8 @@ public class LabTechnicianService : ILabTechnicianService
             throw new NotFoundException($"Lab technician with id '{id}' was not found.");
 
         technician.UpdatePersonalDetails(
+            dto.FullName,
+            dto.NationalId,
             dto.PhoneNumber,
             dto.DateOfBirth,
             dto.PersonalImagePath);

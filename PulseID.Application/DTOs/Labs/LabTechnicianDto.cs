@@ -45,6 +45,8 @@ public class CreateLabTechnicianDto
 
 public class UpdateLabTechnicianDto
 {
+    public string FullName { get; set; } = default!;
+    public string NationalId { get; set; } = default!;
     public string PhoneNumber { get; set; } = default!;
     public DateTime DateOfBirth { get; set; }
     public string? PersonalImagePath { get; set; }

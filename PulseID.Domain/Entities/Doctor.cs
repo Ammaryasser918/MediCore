@@ -65,8 +65,10 @@ namespace PulseID.Domain.Entities
             Status = DoctorStatus.Pending;
         }
 
-        public void UpdatePersonalDetails(string phoneNumber, string specialization, DateTime dateOfBirth, string? personalImagePath)
+        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, string specialization, DateTime dateOfBirth, string? personalImagePath)
         {
+            FullName = fullName;
+            NationalId = nationalId;
             PhoneNumber = phoneNumber;
             Specialization = specialization;
             DateOfBirth = dateOfBirth;

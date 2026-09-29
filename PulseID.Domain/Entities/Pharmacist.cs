@@ -61,8 +61,10 @@ namespace PulseID.Domain.Entities
         }
 
 
-        public void UpdatePersonalDetails(string phoneNumber, DateTime dateOfBirth)
+        public void UpdatePersonalDetails(string fullName, string natinalId, string phoneNumber, DateTime dateOfBirth)
         {
+            FullName = fullName;
+            NationalId = natinalId;
             PhoneNumber = phoneNumber;
             DateOfBirth = dateOfBirth;
             MarkAsUpdated();
