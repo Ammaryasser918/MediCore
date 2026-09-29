@@ -58,6 +58,17 @@ namespace PulseID.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("requester")]
+        [Authorize(Roles = "SuperAdmin,Doctor,Pharmacist,PharmacyAdmin,LabTechnician,LabAdmin,HospitalAdmin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<ActionResult<IEnumerable<AccessRequestDto>>> GetRequesterRequests([FromQuery] bool latestOnly = false, CancellationToken cancellationToken = default)
+        {
+
+            var result = await _accessRequestService.GetRequestsByRequesterAsync(latestOnly, cancellationToken);
+            return Ok(result);
+        }
+
 
         [HttpGet("{id:guid}")]
         [Authorize(Roles = "Patient,Doctor,SuperAdmin")]

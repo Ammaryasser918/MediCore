@@ -119,6 +119,21 @@ namespace PulseID.Application.Services
             return requests.Select(r => ToDto(r));
         }
 
+        public async Task<IEnumerable<AccessRequestDto>> GetRequestsByRequesterAsync(bool latestOnly = false, CancellationToken cancellationToken = default)
+        {
+            var requesterUserId = _currentUserService.UserId;
+            if (requesterUserId is null) throw new ForbiddenAccessException("Only a registered requester can perform this action.");
+            var requests = await _unitOfWork.AccessAuthorizations.GetByRequesterAsync(requesterUserId.Value, cancellationToken);
+            if (latestOnly)
+            {
+                var latestRequest = requests.FirstOrDefault();
+                if (latestRequest is null)
+                    return Enumerable.Empty<AccessRequestDto>();
+                return new[] { ToDto(latestRequest) };
+            }
+            return requests.Select(r => ToDto(r));
+        }
+
         public async Task RejectAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default)
         {
             var patient = await GetCurrentPatientAsync(cancellationToken);
@@ -189,6 +204,8 @@ namespace PulseID.Application.Services
 
             return patient;
         }
+
+        
 
         static AccessRequestDto ToDto(AccessAuthorization access, string? rawOtpCode = null) => new()
         {
