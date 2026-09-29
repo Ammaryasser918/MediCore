@@ -116,6 +116,15 @@ namespace PulseID.Application.Services
 
         }
 
+        public async Task RemoveFromDepartment(Guid doctorId, CancellationToken cancellationToken)
+        {
+            var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId, cancellationToken)
+                ?? throw new NotFoundException(nameof(Doctor), doctorId);
+
+            doctor.RemoveFromDepartment();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<DoctorDto> UpdateDepartmentAsync(Guid id, UpdateDoctorDepartmentDto dto, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);

@@ -113,6 +113,17 @@ namespace PulseID.API.Controllers
             return Ok(updated);
         }
 
+        [HttpPatch("remove-from-department")]
+        [Authorize("Doctor,HospitalAdmin,SuperAdmin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RemoveFromDepartment([FromQuery] Guid doctorId, CancellationToken cancellationToken)
+        {
+            await _doctorService.RemoveFromDepartment(doctorId, cancellationToken);
+            return Ok(new { message = "Doctor Removed From Department successfully." });
+        }
+
+
         // PUT: api/doctor/{id}
         [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
         [HttpPut("{id:guid}")]

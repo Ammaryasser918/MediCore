@@ -135,7 +135,12 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-
+        public void RemoveFromDepartment()
+        {
+            Department = null;
+            DepartmentId = null;
+            MarkAsUpdated();
+        }
         public int GetAge()
         {
             return DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
