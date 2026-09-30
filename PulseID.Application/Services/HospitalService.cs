@@ -218,13 +218,13 @@ public class HospitalService : IHospitalService
 
         return ToDto(hospital);
     }
-    public async Task<HospitalDto> RejectAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<HospitalDto> RejectAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default)
     {
         var hospital =
             await _unitOfWork.Hospitals.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Hospital), id);
 
-        hospital.Reject();
+        hospital.Reject(adminId);
 
         _unitOfWork.Hospitals.Update(hospital);
 
@@ -260,4 +260,54 @@ public class HospitalService : IHospitalService
 
         return ToDto(hospital);
     }
+
+    public async Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var hospital = await _unitOfWork.Hospitals.GetByIdWithDeletedAsync(id, cancellationToken)
+            ?? throw new NotFoundException("Hospital not found.");
+
+        using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var departments = await _unitOfWork.Departments.GetByHospitalIncludingDeletedAsync(id, cancellationToken);
+            foreach (var department in departments)
+            {
+                var doctors = await _unitOfWork.Doctors.GetByDepartmentAsync(department.Id, cancellationToken);
+
+                foreach (var doctor in doctors)
+                {
+                    doctor.DetachFromDepartment();
+                    _unitOfWork.Doctors.Update(doctor);
+                }
+                _unitOfWork.Departments.HardDelete(department);
+                _unitOfWork.Departments.Update(department);
+            }
+            _unitOfWork.Hospitals.HardDelete(hospital);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+    }
+
+    public async Task<IReadOnlyList<HospitalDto>> GetDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        var hospitals = await _unitOfWork.Hospitals.GetDeletedAsync(cancellationToken);
+        return hospitals.Select(ToDto).ToList();
+    }
+
+    public async Task RestoreHospitalAsync(Guid hospitalId, CancellationToken cancellationToken = default)
+    {
+        var hospital = await _unitOfWork.Hospitals.GetByIdWithDeletedAsync(hospitalId, cancellationToken)
+            ?? throw new NotFoundException($"Deleted hospital record not found.");
+        _unitOfWork.Hospitals.Restore(hospital);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+
 }

@@ -30,4 +30,11 @@ public interface IPrescriptionService
     Task CancelAsync(Guid prescriptionId, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid prescriptionId, CancellationToken cancellationToken = default);
+
+    Task HardDeleteAsync(Guid prescriptionId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PrescriptionDto>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    Task RestorePrescriptionAsync(Guid prescriptionId, CancellationToken cancellationToken = default);
+
 }

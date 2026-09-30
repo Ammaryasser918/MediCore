@@ -26,4 +26,11 @@ public interface IDepartmentService
     Task<IReadOnlyList<DepartmentDto>> GetByHospitalIncludingDeletedAsync(Guid hospitalId, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task HardDeleteAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DepartmentDto>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    Task RestoreDepartmentAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
 }

@@ -174,12 +174,37 @@ public class PrescriptionService : IPrescriptionService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task HardDeleteAsync(Guid prescriptionId, CancellationToken cancellationToken = default)
+    {
+        var prescription = await _unitOfWork.Prescriptions.GetByIdWithDeletedAsync(prescriptionId, cancellationToken)
+            ?? throw new NotFoundException($"Prescription with id '{prescriptionId}' was not found.");
+        _unitOfWork.Prescriptions.HardDelete(prescription);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<PrescriptionDto>> GetDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        var prescriptions = await _unitOfWork.Prescriptions.GetDeletedAsync(cancellationToken);
+        return prescriptions.Select(ToDto).ToList();
+    }
+
+    public async Task RestorePrescriptionAsync(Guid prescriptionId, CancellationToken cancellationToken = default)
+    {
+        var prescription = await _unitOfWork.Prescriptions.GetDeletedByIdAsync(prescriptionId, cancellationToken)
+            ?? throw new NotFoundException("Deleted prescription record not found.");
+        _unitOfWork.Prescriptions.Restore(prescription);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+
     static PrescriptionDto ToDto(Prescription prescription)
     {
         return new PrescriptionDto
         {
             Id = prescription.Id,
             MedicalRecordId = prescription.MedicalRecordId,
+            PatientId = prescription.MedicalRecord?.PatientId ?? Guid.Empty,
+            DoctorId = prescription.MedicalRecord?.DoctorId ?? Guid.Empty,
             IssueDate = prescription.IssueDate,
             DispensedAt = prescription.DispensedAt,
             Status = prescription.Status,

@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Department;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
 
 namespace PulseID.API.Controllers;
 
@@ -19,6 +22,7 @@ public class DepartmentController : ControllerBase
     // GET: api/department
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetAll(CancellationToken cancellationToken)
     {
         var departments = await _departmentService.GetAllAsync(cancellationToken);
@@ -29,6 +33,7 @@ public class DepartmentController : ControllerBase
     // GET: api/department/including-deleted
     [HttpGet("including-deleted")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetAllIncludingDeleted(CancellationToken cancellationToken)
     {
         var departments = await _departmentService.GetAllIncludingDeletedAsync(cancellationToken);
@@ -40,6 +45,7 @@ public class DepartmentController : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<DepartmentDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var department = await _departmentService.GetByIdAsync(id, cancellationToken);
@@ -51,6 +57,7 @@ public class DepartmentController : ControllerBase
     [HttpGet("{id:guid}/details")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<DepartmentDto>> GetDetails(Guid id, CancellationToken cancellationToken)
     {
         var department = await _departmentService.GetDetailsAsync(id, cancellationToken);
@@ -62,6 +69,7 @@ public class DepartmentController : ControllerBase
     [HttpGet("{id:guid}/doctors")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<IReadOnlyList<DoctorDto>>> GetDoctors(Guid id, CancellationToken cancellationToken)
     {
         var doctors = await _departmentService.GetDoctorsAsync(id, cancellationToken);
@@ -72,6 +80,7 @@ public class DepartmentController : ControllerBase
     // GET: api/department/hospital/{hospitalId}
     [HttpGet("hospital/{hospitalId:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetByHospital(Guid hospitalId, CancellationToken cancellationToken)
     {
         var departments = await _departmentService.GetByHospitalAsync(hospitalId, cancellationToken);
@@ -82,6 +91,7 @@ public class DepartmentController : ControllerBase
     // GET: api/department/hospital/{hospitalId}/including-deleted
     [HttpGet("hospital/{hospitalId:guid}/including-deleted")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetByHospitalIncludingDeleted(Guid hospitalId, CancellationToken cancellationToken)
     {
         var departments = await _departmentService.GetByHospitalIncludingDeletedAsync(hospitalId, cancellationToken);
@@ -91,6 +101,7 @@ public class DepartmentController : ControllerBase
 
     // POST: api/department/hospital/{hospitalId}
     [HttpPost("hospital/{hospitalId:guid}")]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -103,6 +114,7 @@ public class DepartmentController : ControllerBase
 
     // PUT: api/department/{id}
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -118,6 +130,7 @@ public class DepartmentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     public async Task<ActionResult<DepartmentDto>> AssignDoctorToDepartment(Guid id, Guid doctorId, CancellationToken cancellationToken)
     {
         var updated = await _departmentService.AssignDoctorToDepartmentAsync(id, doctorId, cancellationToken);
@@ -129,10 +142,40 @@ public class DepartmentController : ControllerBase
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await _departmentService.DeleteAsync(id, cancellationToken);
 
         return NoContent();
     }
+
+    [HttpDelete("hard-delete")]
+    [Authorize("SuperAdmin")]
+    public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+    {
+        await _departmentService.HardDeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("deleted")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [EnableRateLimiting("BigDataLimiter")]
+    public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+    {
+        var result = await _departmentService.GetDeletedAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [EnableRateLimiting("SmallDataLimiter")]
+    public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        await _departmentService.RestoreDepartmentAsync(id, cancellationToken);
+        return Ok(new { Message = "Record restored successfully." });
+    }
+
+
+
 }

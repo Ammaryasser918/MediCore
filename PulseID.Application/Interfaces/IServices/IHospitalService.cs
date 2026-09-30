@@ -23,9 +23,15 @@ public interface IHospitalService
 
     Task<HospitalDto> ApproveAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
 
-    Task<HospitalDto> RejectAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<HospitalDto> RejectAsync(Guid id, Guid adminId, CancellationToken cancellationToken = default);
 
     Task<HospitalDto> DeactivateAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<HospitalDto> ReactivateAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task HardDeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<HospitalDto>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    Task RestoreHospitalAsync(Guid hospitalId, CancellationToken cancellationToken = default);
 }

@@ -1,13 +1,17 @@
-using System;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PulseID.Application.DTOs.Hospital;
+using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Department;
+using PulseID.Application.DTOs.Hospital;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Application.Services;
+using System;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers;
 
-
+[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class HospitalController : ControllerBase
@@ -23,6 +27,7 @@ public class HospitalController : ControllerBase
     // GET: api/hospital
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<IReadOnlyList<HospitalDto>>> GetAll(CancellationToken cancellationToken)
     {
         var hospitals =
@@ -34,6 +39,7 @@ public class HospitalController : ControllerBase
 
     // GET: api/hospital/{id}
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<HospitalDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -49,6 +55,7 @@ public class HospitalController : ControllerBase
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [AllowAnonymous]
     public async Task<ActionResult<HospitalDto>> Create([FromBody] CreateHospitalDto dto, CancellationToken cancellationToken)
     {
         var created =
@@ -63,6 +70,7 @@ public class HospitalController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     public async Task<ActionResult<HospitalDto>> Update(Guid id, [FromBody] UpdateHospitalDto dto, CancellationToken cancellationToken)
     {
         var updated =
@@ -77,6 +85,7 @@ public class HospitalController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
     public async Task<ActionResult<HospitalDto>> UpdateLicenseDocument(Guid id, [FromBody] string NewLicenseDocumentPath, CancellationToken cancellationToken)
     {
         var updated =
@@ -88,6 +97,7 @@ public class HospitalController : ControllerBase
 
     // DELETE: api/hospital/{id}
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "SuperAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -101,8 +111,13 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/approve")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HospitalDto>> Approve(Guid id, [FromQuery] Guid adminId, CancellationToken cancellationToken)
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<ActionResult<HospitalDto>> Approve(Guid id, CancellationToken cancellationToken)
     {
+        var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(adminIdClaim, out var adminId))
+            return Unauthorized("Can't identify the current admin user.");
+
         var updated =
             await _hospitalService.ApproveAsync(id, adminId, cancellationToken);
         return Ok(updated);
@@ -111,6 +126,7 @@ public class HospitalController : ControllerBase
     [HttpGet("{id:guid}/departments")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin,LabAdmin,Doctor,Patient,Pharmacist,LabTechnician")]
     public async Task<ActionResult<IReadOnlyList<DepartmentDto>>> GetDepartments(Guid id, CancellationToken cancellationToken)
     {
         var departments =
@@ -135,10 +151,16 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/reject")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<ActionResult<HospitalDto>> Reject(Guid id, CancellationToken cancellationToken)
     {
+
+        var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(adminIdClaim, out var adminId))
+            return Unauthorized("Can't identify the current admin user.");
+
         var updated =
-            await _hospitalService.RejectAsync(id, cancellationToken);
+            await _hospitalService.RejectAsync(id, adminId, cancellationToken);
 
         return Ok(updated);
     }
@@ -148,6 +170,7 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/deactivate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<ActionResult<HospitalDto>> Deactivate(Guid id, CancellationToken cancellationToken)
     {
         var updated =
@@ -161,12 +184,40 @@ public class HospitalController : ControllerBase
     [HttpPatch("{id:guid}/reactivate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<ActionResult<HospitalDto>> Reactivate(Guid id, CancellationToken cancellationToken)
     {
         var updated =
             await _hospitalService.ReactivateAsync(id, cancellationToken);
-
+        
         return Ok(updated);
     }
+
+    [HttpDelete("hard-delete")]
+    [Authorize("SuperAdmin")]
+    public async Task<IActionResult> HardDelete(Guid id, CancellationToken cancellationToken)
+    {
+        await _hospitalService.HardDeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("deleted")]
+    [Authorize(Roles = "SuperAdmin")]
+    [EnableRateLimiting("BigDataLimiter")]
+    public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
+    {
+        var result = await _hospitalService.GetDeletedAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "SuperAdmin")]
+    [EnableRateLimiting("SmallDataLimiter")]
+    public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        await _hospitalService.RestoreHospitalAsync(id, cancellationToken);
+        return Ok(new { Message = "Record restored successfully." });
+    }
+
 }
 

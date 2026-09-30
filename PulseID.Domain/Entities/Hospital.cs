@@ -21,6 +21,8 @@ namespace PulseID.Domain.Entities
 
         public Guid? ApprovedByAdminId { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+        public Guid? RejectedByAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
 
 
 
@@ -113,11 +115,14 @@ namespace PulseID.Domain.Entities
 
         }
 
-        public void Reject()
+        public void Reject(Guid adminId)
         {
             if (Status != HospitalStatus.Pending)
                 throw new BusinessRuleViolationException("Can only reject pending hospitals");
             Status = HospitalStatus.Rejected;
+            RejectedAt = DateTime.UtcNow;
+            RejectedByAdminId = adminId;
+            MarkAsUpdated();
         }
 
 

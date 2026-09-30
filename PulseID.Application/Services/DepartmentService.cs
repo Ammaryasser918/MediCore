@@ -172,4 +172,50 @@ public class DepartmentService : IDepartmentService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task HardDeleteAsync(Guid departmentId, CancellationToken cancellationToken = default)
+    {
+        using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var department = await _unitOfWork.Departments.GetByIdWithDeletedAsync(departmentId, cancellationToken);
+            if (department is null)
+                throw new NotFoundException($"Department with ID '{departmentId}' was not found.");
+
+            var doctors = await _unitOfWork.Doctors.GetByDepartmentAsync(departmentId, cancellationToken);
+
+            foreach (var doctor in doctors)
+            {
+                doctor.DetachFromDepartment();
+                _unitOfWork.Doctors.Update(doctor);
+            }
+
+            _unitOfWork.Departments.HardDelete(department);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<IReadOnlyList<DepartmentDto>> GetDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        var departments = await _unitOfWork.Departments.GetDeletedAsync(cancellationToken);
+        return departments.Select(ToDto).ToList();
+    }
+
+    public async Task RestoreDepartmentAsync(Guid departmentId, CancellationToken cancellationToken = default)
+    {
+        var department = await _unitOfWork.Departments.GetDeletedByIdAsync(departmentId, cancellationToken)
+            ?? throw new NotFoundException("Deleted department record not found.");
+        _unitOfWork.Departments.Restore(department);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+
 }

@@ -146,6 +146,13 @@ namespace PulseID.Domain.Entities
             return DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
         }
 
+        public void DetachFromDepartment()
+        {
+            DepartmentId = null;
+            Department = null;
+            MarkAsUpdated();
+        }
+
 
     }
 }
