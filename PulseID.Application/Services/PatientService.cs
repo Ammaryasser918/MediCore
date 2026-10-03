@@ -38,7 +38,8 @@ namespace PulseID.Application.Services
                 PhoneNumber = patient.PhoneNumber,
                 Address = patient.Address,
                 CreatedAt = patient.CreatedAt,
-                UpdatedAt = patient.UpdatedAt
+                UpdatedAt = patient.UpdatedAt,
+                PersonalImageUrl = patient.PersonalImagePath
             };
 
 

@@ -133,7 +133,7 @@ namespace PulseID.API.Controllers
 
 
         // DELETE: api/patient/{id}
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Patient")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
