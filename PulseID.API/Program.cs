@@ -231,11 +231,14 @@ namespace PulseID.API
                     var csvPath = Path.Combine(AppContext.BaseDirectory, "medications.csv");
 
                     await MedicationsSeeder.SeedAsync(context, csvPath);
+
+                    await AllergiesSeeder.SeedAsync(context);
+                    await ChronicDiseasesSeeder.SeedAsync(context);
                 }
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred while seeding the SuperAdmin user.");
+                    logger.LogError(ex, "An error occurred while seeding the database.");
                 }
             }
 
