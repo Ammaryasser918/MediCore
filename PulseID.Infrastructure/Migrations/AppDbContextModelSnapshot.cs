@@ -1181,6 +1181,57 @@ namespace PulseID.Infrastructure.Migrations
                     b.ToTable("PatientChronicDiseases", (string)null);
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.PatientMedication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Dosage")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Frequency")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("MedicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicationId");
+
+                    b.HasIndex("PatientId", "IsActive");
+
+                    b.HasIndex("PatientId", "MedicationId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.ToTable("PatientMedications", (string)null);
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Pharmacist", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1853,6 +1904,25 @@ namespace PulseID.Infrastructure.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("PulseID.Domain.Entities.PatientMedication", b =>
+                {
+                    b.HasOne("PulseID.Domain.Entities.Medication", "Medication")
+                        .WithMany()
+                        .HasForeignKey("MedicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PulseID.Domain.Entities.Patient", "Patient")
+                        .WithMany("PatientMedications")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Medication");
+
+                    b.Navigation("Patient");
+                });
+
             modelBuilder.Entity("PulseID.Domain.Entities.Pharmacist", b =>
                 {
                     b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
@@ -1989,6 +2059,8 @@ namespace PulseID.Infrastructure.Migrations
                     b.Navigation("PatientAllergies");
 
                     b.Navigation("PatientChronicDiseases");
+
+                    b.Navigation("PatientMedications");
                 });
 
             modelBuilder.Entity("PulseID.Domain.Entities.Pharmacist", b =>

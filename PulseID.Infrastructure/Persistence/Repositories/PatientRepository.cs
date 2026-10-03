@@ -28,7 +28,10 @@ namespace PulseID.Infrastructure.Persistence.Repositories
             .ThenInclude(pa => pa.Allergy)
             .Include(p => p.PatientChronicDiseases)
             .ThenInclude(pcd => pcd.ChronicDisease)
-            .Include(p => p.MedicalFiles).AsSplitQuery() // Avoids Cartesian explosion when loading multiple collection navigations
+            .Include(p => p.MedicalFiles)
+            .Include(p => p.PatientMedications)
+            .ThenInclude(pm => pm.Medication)
+            .AsSplitQuery() // Avoids Cartesian explosion when loading multiple collection navigations
             .FirstOrDefaultAsync(p => p.Id == patientId && !p.IsDeleted, cancellationToken);
 
     }

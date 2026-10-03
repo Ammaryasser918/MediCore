@@ -79,6 +79,15 @@ namespace PulseID.Infrastructure.Persistence.Configurations
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
 
 
+            // Patient Medications
+            builder.HasMany(p => p.PatientMedications)
+                .WithOne(pm => pm.Patient)
+                .HasForeignKey(pm => pm.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Navigation(p => p.PatientMedications)
+                .HasField("_patientMedications")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
+
 
         }
     }

@@ -28,7 +28,7 @@ namespace PulseID.API.Authorization
             }
 
             var currentDoctor = await _doctorService.GetByUserIdAsync(currentUserId.Value);
-            if (currentUserId is not null && currentUserId == resource.Id)
+            if (currentUserId is not null && currentDoctor.Id == resource.Id)
             {
                 context.Succeed(requirement);
             }

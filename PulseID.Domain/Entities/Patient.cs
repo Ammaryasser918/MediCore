@@ -51,6 +51,9 @@ namespace PulseID.Domain.Entities
         readonly List<LabTestRequest> _labTestRequests = new List<LabTestRequest>();
         public IReadOnlyCollection<LabTestRequest> LabTestRequests => _labTestRequests.AsReadOnly();
 
+        readonly List<PatientMedication> _patientMedications = new List<PatientMedication>();
+        public IReadOnlyCollection<PatientMedication> PatientMedications => _patientMedications.AsReadOnly();
+
         // ================================== < Constructors Section > =================================
 
         Patient() { }
@@ -204,7 +207,28 @@ namespace PulseID.Domain.Entities
             return file;
         }
 
+        // ------ < Medications > ------
 
+        public PatientMedication AddMedication(Guid medicationId, string? dosage = null, string? frequency = null,
+            DateTime? startDate = null, DateTime? endDate = null)
+        {
+            if (_patientMedications.Any(pm => pm.MedicationId == medicationId && pm.IsActive))
+                throw new BusinessRuleViolationException("This Medication is already active for this Patient");
+
+            var patientMedication = new PatientMedication(Id, medicationId, dosage, frequency, startDate, endDate);
+            _patientMedications.Add(patientMedication);
+            MarkAsUpdated();
+            return patientMedication;
+        }
+
+        public void StopMedication(Guid patientMedicationId, DateTime? endDate = null)
+        {
+            var patientMedication = _patientMedications.FirstOrDefault(pm => pm.Id == patientMedicationId)
+                ?? throw new BusinessRuleViolationException("Medication record not found for this Patient");
+
+            patientMedication.Stop(endDate);
+            MarkAsUpdated();
+        }
 
 
 
