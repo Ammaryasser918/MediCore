@@ -77,6 +77,20 @@ namespace PulseID.API.Controllers
         }
 
 
+        [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+        [HttpGet("doctor")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [EnableRateLimiting("BigDataLimiter")]
+        public async Task<ActionResult<IReadOnlyList<MedicalRecordListItemDto>>> GetByDoctor([FromQuery] Guid? doctorId, [FromQuery] bool latestOnly = true, CancellationToken cancellationToken = default)
+        {
+            var records = await _medicalRecordService.GetByDoctorAsync(doctorId, latestOnly, cancellationToken);
+            return Ok(records);
+        }
+
+
         // GET: api/medicalrecords/{id}/versions 
         [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
         [HttpGet("{anyVersionId:guid}/versions")]

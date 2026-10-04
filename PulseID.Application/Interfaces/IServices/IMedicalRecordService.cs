@@ -16,7 +16,7 @@ namespace PulseID.Application.Interfaces.IServices
 
         Task<IReadOnlyList<MedicalRecordListItemDto>> GetByPatientAsync(Guid patientId, bool latestVersionsOnly = true, CancellationToken cancellationToken = default);
 
-        //Task<IReadOnlyList<MedicalRecordListItemDto>> GetByDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default);
+        Task<IReadOnlyList<MedicalRecordListItemDto>> GetByDoctorAsync(Guid? doctorId, bool latestVersionsOnly = true, CancellationToken cancellationToken = default);
 
         Task<IReadOnlyList<MedicalRecordVersionDto>> GetVersionHistoryAsync(Guid anyVersionId, CancellationToken cancellationToken = default);
 

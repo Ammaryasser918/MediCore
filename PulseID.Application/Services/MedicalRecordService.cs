@@ -3,6 +3,7 @@ using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.MedicalRecord;
 using PulseID.Application.Interfaces;
 using PulseID.Application.Interfaces.IServices;
+using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
 using PulseID.Domain.Exceptions;
@@ -93,6 +94,30 @@ namespace PulseID.Application.Services
 
         }
         
+        public async Task<IReadOnlyList<MedicalRecordListItemDto>> GetByDoctorAsync(Guid? doctorId, bool LatestVersionOnly = true, CancellationToken cancellationToken = default)
+        {
+            var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+
+            Guid targetDoctorId = Guid.Empty;
+            if (!doctorId.HasValue || doctorId.Value == Guid.Empty)
+            {
+                var currentDoctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken)
+                    ?? throw new NotFoundException("Doctor profile not found for current user.");
+                targetDoctorId = currentDoctor.Id;
+            }
+            else
+            {
+                var doctor = await _unitOfWork.Doctors.GetByIdAsync(doctorId.Value, cancellationToken)
+                    ?? throw new NotFoundException(nameof(Doctor), doctorId.Value);
+                var isAdmin = (_currentUserService.Role == AppRoles.SuperAdmin || _currentUserService.Role == AppRoles.HospitalAdmin);
+                if (doctor.UserId != currentUserId && !isAdmin)
+                    throw new ForbiddenAccessException("You do not have permission to access records for this doctor.");
+                targetDoctorId = doctor.Id;
+            }
+
+            var records = await _unitOfWork.MedicalRecords.GetByDoctorAsync(targetDoctorId, cancellationToken);
+            return records.Select(ToListItemDto).ToList();
+        }
 
         public async Task<IReadOnlyList<MedicalRecordVersionDto>> GetVersionHistoryAsync(Guid anyVersionId, CancellationToken cancellationToken = default)
         {

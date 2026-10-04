@@ -32,7 +32,10 @@ namespace PulseID.Infrastructure.Persistence.Repositories
 
 
         public async Task<IReadOnlyList<MedicalRecord>> GetByDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default)
-            => await _dbSet.Where(m => m.DoctorId == doctorId && !m.IsDeleted).ToListAsync(cancellationToken);
+            => await _dbSet.Include(r => r.Patient)
+            .Where(r => r.DoctorId == doctorId && !r.IsDeleted)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync(cancellationToken);
 
     }
 }
