@@ -30,7 +30,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpGet("by-status/{status}")]
-    [Authorize(Roles = "Pharmacist,PharmacyAdmin,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Pharmacist,PharmacyAdmin,HospitalAdmin,SuperAdmin,Patient")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<PrescriptionDto>>> GetByStatus(PrescriptionStatus status, CancellationToken cancellationToken)
@@ -72,7 +72,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PrescriptionDto>> Create(CreatePrescriptionDto dto, CancellationToken cancellationToken)
@@ -82,7 +82,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -93,7 +93,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPost("{id:guid}/items")]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddItem(Guid id, AddPrescriptionItemDto dto, CancellationToken cancellationToken)
@@ -103,7 +103,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPut("{id:guid}/items/{itemId:guid}")]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateItem(Guid id, Guid itemId, UpdatePrescriptionItemDto dto, CancellationToken cancellationToken)
@@ -113,7 +113,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpDelete("{id:guid}/items/{itemId:guid}")]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveItem(Guid id, Guid itemId, CancellationToken cancellationToken)
@@ -123,7 +123,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPut("{id:guid}/verify")]
-    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Verify(Guid id, CancellationToken cancellationToken)
@@ -144,7 +144,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPut("{id:guid}/cancel")]
-    [Authorize(Roles = "Doctor,Patient,HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "Doctor,Patient,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -155,7 +155,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
+    [Authorize(Roles = "HospitalAdmin,SuperAdmin,PharmacyAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -173,7 +173,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpGet("deleted")]
-    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin")]
     [EnableRateLimiting("BigDataLimiter")]
     public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
     {
@@ -182,7 +182,7 @@ public class PrescriptionController : ControllerBase
     }
 
     [HttpPost("{id:guid}/restore")]
-    [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+    [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin")]
     [EnableRateLimiting("SmallDataLimiter")]
     public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
     {

@@ -20,7 +20,13 @@ namespace PulseID.API.Authorization
 
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, OwnerShipRequirement requirement, MedicalRecordDto resource)
         {
-            if (context.User.IsInRole("SuperAdmin") || context.User.IsInRole("HospitalAdmin") || context.User.IsInRole("Doctor"))
+            if (context.User.IsInRole("SuperAdmin") || 
+                context.User.IsInRole("HospitalAdmin") || 
+                context.User.IsInRole("Doctor") || 
+                context.User.IsInRole("Pharmacist") || 
+                context.User.IsInRole("PharmacyAdmin") || 
+                context.User.IsInRole("LabTechnician") || 
+                context.User.IsInRole("LabAdmin"))
             {
                 context.Succeed(requirement);
                 return;

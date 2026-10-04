@@ -26,7 +26,7 @@ namespace PulseID.API.Controllers
 
 
         // POST: api/medicalrecords
-        [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -39,7 +39,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/{id}
-        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin,LabTechnician,LabAdmin")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -57,7 +57,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/patient/{patientId}?latestOnly=true
-        [Authorize]
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin,LabTechnician,LabAdmin")]
         [HttpGet("patient/{patientId:guid}")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -78,7 +78,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/medicalrecords/{id}/versions 
-        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
         [HttpGet("{anyVersionId:guid}/versions")]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -101,7 +101,7 @@ namespace PulseID.API.Controllers
 
 
         // POST: api/medicalrecords/{id}/versions
-        [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin")]
         [HttpPost("{currentVersionId:guid}/versions")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,7 +114,7 @@ namespace PulseID.API.Controllers
 
 
         [HttpGet("deleted")]
-        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin")]
         [EnableRateLimiting("BigDataLimiter")]
         public async Task<IActionResult> GetDeleted(CancellationToken cancellationToken)
         {
@@ -123,7 +123,7 @@ namespace PulseID.API.Controllers
         }
 
         [HttpPost("{id:guid}/restore")]
-        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin")]
         [EnableRateLimiting("SmallDataLimiter")]
         public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken)
         {

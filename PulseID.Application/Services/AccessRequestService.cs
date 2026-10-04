@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -105,10 +106,10 @@ namespace PulseID.Application.Services
         }
 
 
-        public async Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(bool latestOnly = false, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(Guid? id, bool latestOnly = false, CancellationToken cancellationToken = default)
         {
-            var patient = await GetCurrentPatientAsync(cancellationToken);
-            var requests = await _unitOfWork.AccessAuthorizations.GetByPatientAsync(patient.Id, cancellationToken);
+            var patientId = await ResolvePatientIdAsync(id, cancellationToken);
+            var requests = await _unitOfWork.AccessAuthorizations.GetByPatientAsync(patientId, cancellationToken);
             if (latestOnly)
             {
                 var latestRequest = requests.FirstOrDefault();
@@ -119,18 +120,41 @@ namespace PulseID.Application.Services
             return requests.Select(r => ToDto(r));
         }
 
-        public async Task<IEnumerable<AccessRequestDto>> GetRequestsByRequesterAsync(bool latestOnly = false, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<AccessRequestDto>> GetRequestsByRequesterAsync(Guid? requesterId, bool latestOnly = false, CancellationToken cancellationToken = default)
         {
-            var requesterUserId = _currentUserService.UserId;
-            if (requesterUserId is null) throw new ForbiddenAccessException("Only a registered requester can perform this action.");
-            var requests = await _unitOfWork.AccessAuthorizations.GetByRequesterAsync(requesterUserId.Value, cancellationToken);
+            var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+            Guid targetUserId;
+
+            if (!requesterId.HasValue || requesterId.Value == Guid.Empty)
+            {
+                targetUserId = currentUserId;
+            }
+            else
+            {
+                targetUserId = await GetUserIdFromRequesterIdAsync(requesterId.Value, cancellationToken);
+
+                var isAdmin = _currentUserService.Role == AppRoles.SuperAdmin ||
+                              _currentUserService.Role == AppRoles.HospitalAdmin ||
+                              _currentUserService.Role == AppRoles.LabAdmin ||
+                              _currentUserService.Role == AppRoles.PharmacyAdmin;
+
+                if (targetUserId != currentUserId && !isAdmin)
+                {
+                    throw new ForbiddenAccessException("You are not authorized to view requests for another requester.");
+                }
+            }
+
+            var requests = await _unitOfWork.AccessAuthorizations.GetByRequesterAsync(targetUserId, cancellationToken);
+
             if (latestOnly)
             {
-                var latestRequest = requests.FirstOrDefault();
+                var latestRequest = requests.OrderByDescending(r => r.CreatedAt).FirstOrDefault();
                 if (latestRequest is null)
                     return Enumerable.Empty<AccessRequestDto>();
+
                 return new[] { ToDto(latestRequest) };
             }
+
             return requests.Select(r => ToDto(r));
         }
 
@@ -222,6 +246,39 @@ namespace PulseID.Application.Services
             Otp = rawOtpCode
         };
 
+        async Task<Guid> ResolvePatientIdAsync(Guid? patientId, CancellationToken cancellationToken)
+        {
+            if (patientId.HasValue && patientId.Value != Guid.Empty)
+                return patientId.Value;
+            var currentUserId = RequireCurrentUserId();
+            var role = _currentUserService.Role;
+
+            if (string.Equals(role, AppRoles.Patient, StringComparison.OrdinalIgnoreCase))
+            {
+                var patient = await _unitOfWork.Patients.GetByUserIdAsync(currentUserId, cancellationToken)
+                    ?? throw new NotFoundException($"Patient profile not found for user ID: '{currentUserId}'.");
+                return patient.Id;
+            }
+
+            throw new ArgumentException("PatientId query parameter is required for non-patient callers.");
+
+        }
+        Guid RequireCurrentUserId()
+            => _currentUserService.UserId ?? throw new AuthenticationRequiredException();
+
+        private async Task<Guid> GetUserIdFromRequesterIdAsync(Guid requesterId, CancellationToken cancellationToken)
+        {
+            var doctor = await _unitOfWork.Doctors.GetByIdAsync(requesterId, cancellationToken);
+            if (doctor is not null) return doctor.UserId;
+
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(requesterId, cancellationToken);
+            if (pharmacist is not null) return pharmacist.UserId;
+
+            var labTech = await _unitOfWork.LabTechnicians.GetByIdAsync(requesterId, cancellationToken);
+            if (labTech is not null) return labTech.UserId;
+
+            throw new NotFoundException("Requester", requesterId);
+        }
 
     }
 }

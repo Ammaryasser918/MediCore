@@ -12,8 +12,8 @@ namespace PulseID.Application.Interfaces.IServices
         Task<AccessRequestDto> RequestAccessAsync(Guid patientId, RequestPatientAccessDto dto, CancellationToken cancellationToken = default);
         Task<AccessRequestDto> VerifyAccessOtpAsync(Guid accessRequestId, VerifyAccessOtpDto dto, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(bool latestOnly = false, CancellationToken cancellationToken = default);
-        Task<IEnumerable<AccessRequestDto>> GetRequestsByRequesterAsync(bool latestOnly = false, CancellationToken cancellationToken = default);
+        Task<IEnumerable<AccessRequestDto>> GetPatientRequestsAsync(Guid? patientId, bool latestOnly = false, CancellationToken cancellationToken = default);
+        Task<IEnumerable<AccessRequestDto>> GetRequestsByRequesterAsync(Guid? requesterId, bool latestOnly = false, CancellationToken cancellationToken = default);
         Task<AccessRequestDto> GetRequestByIdAsync(Guid requestId, CancellationToken cancellationToken = default);
 
         Task RejectAccessRequestAsync(Guid requestId, CancellationToken cancellationToken = default);

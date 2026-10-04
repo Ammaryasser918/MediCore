@@ -42,7 +42,7 @@ namespace PulseID.API.Controllers
 
 
         // GET: api/patients/{id}
-        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin,LabTechnician,LabAdmin")]
         [HttpGet("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -82,7 +82,7 @@ namespace PulseID.API.Controllers
         }
 
         // GET: api/patients/{nationalId}
-        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "Patient,Doctor,HospitalAdmin,SuperAdmin,Pharmacist,PharmacyAdmin,LabTechnician,LabAdmin")]
         [HttpGet("by-national-id/{nationalId}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -103,7 +103,7 @@ namespace PulseID.API.Controllers
 
         // POST: api/patients
         [HttpPost]
-        [Authorize(Roles = "SuperAdmin,HospitalAdmin")]
+        [Authorize(Roles = "SuperAdmin,HospitalAdmin,PharmacyAdmin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<PatientDto>> Create([FromBody] CreatePatientDto dto, CancellationToken cancellationToken)

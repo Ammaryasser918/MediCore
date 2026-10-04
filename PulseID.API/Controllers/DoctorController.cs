@@ -137,7 +137,7 @@ namespace PulseID.API.Controllers
 
 
         // PUT: api/doctor/{id}
-        [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "HospitalAdmin,SuperAdmin,Doctor")]
         [HttpPut("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
