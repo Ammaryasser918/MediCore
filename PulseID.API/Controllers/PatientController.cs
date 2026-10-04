@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using PulseID.Application.Common.Interfaces;
+using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces.IServices;
 using PulseID.Application.Services;
@@ -139,7 +140,15 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
+            var existingPatient = await _patientService.GetByIdAsync(id, cancellationToken);
+            if (existingPatient is null) return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingPatient, "PatientOwnerOrAdmin");
+            if (!authResult.Succeeded)
+                return Forbid();
+
             await _patientService.DeleteAsync(id, cancellationToken);
+            
             return NoContent();
         }
 
@@ -168,6 +177,31 @@ namespace PulseID.API.Controllers
         {
             await _patientService.RestorePatientAsync(id, cancellationToken);
             return Ok(new { Message = "Record restored successfully." });
+        }
+
+
+        [Authorize(Roles = "Patient,SuperAdmin")]
+        [HttpPut("{id:guid}/personal-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PatientDto>> UploadPersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _patientService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "PatientOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _patientService.SetPersonalImageAsync(id, file, cancellationToken));
+        }
+
+        [Authorize(Roles = "Patient,SuperAdmin")]
+        [HttpPut("{id:guid}/personal-image/remove")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PatientDto>> RemovePersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _patientService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "PatientOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _patientService.RemovePersonalImageAsync(id, cancellationToken));
         }
 
 

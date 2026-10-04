@@ -13,7 +13,7 @@ namespace PulseID.Application.DTOs.MedicalFiles
         public Guid PatientId { get; set; }
         public Guid MedicalRecordId { get; set; }
         public string FileName { get; set; } = default!;
-        public string FilePath { get; set; } = default!;
+        public string? FileUrl { get; set; } = default!;
         public string ContentType { get; set; } = default!;
         public MedicalFileType FileType { get; set; }
         public string? Description { get; set; }

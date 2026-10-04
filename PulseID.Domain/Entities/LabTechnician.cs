@@ -69,7 +69,7 @@ namespace PulseID.Domain.Entities
             Status = LabTechnicianStatus.Pending;
         }
 
-        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, DateTime dateOfBirth, string? personalImagePath)
+        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, DateTime dateOfBirth)
         {
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
@@ -78,9 +78,18 @@ namespace PulseID.Domain.Entities
             PhoneNumber = phoneNumber;
             DateOfBirth = dateOfBirth;
 
-            if (!string.IsNullOrWhiteSpace(personalImagePath))
-                PersonalImagePath = personalImagePath;
 
+            MarkAsUpdated();
+        }
+
+        public void SetPersonalImage(string? personalImagePath)
+        {
+            PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+        public void RemovePersonalImage()
+        {
+            PersonalImagePath = null;
             MarkAsUpdated();
         }
 

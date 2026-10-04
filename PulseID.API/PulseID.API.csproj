@@ -22,8 +22,4 @@
     <ProjectReference Include="..\PulseID.Infrastructure\PulseID.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="FileUploads\" />
-  </ItemGroup>
-
 </Project>

@@ -27,7 +27,8 @@ namespace PulseID.Application.DTOs.Pharmacist
         public DateTime? UpdatedAt { get; set; }
         public Guid? RejectedByAdminId { get; set; }
         public DateTime? RejectedAt { get; set; }
-        
-        
+        public string? PersonalImageUrl { get; set; }
+
+
     }
 }

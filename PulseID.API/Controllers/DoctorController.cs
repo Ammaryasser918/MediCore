@@ -109,6 +109,12 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<DoctorDto>> UpdateDepartment(Guid id, [FromBody] UpdateDoctorDepartmentDto dto, CancellationToken cancellationToken)
         {
+            var existingDoctor = await _doctorService.GetByIdAsync(id, cancellationToken);
+            if (existingDoctor is null) return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingDoctor, "DoctorOwnerOrAdmin");
+            if (!authResult.Succeeded)
+                return Forbid();
             var updated = await _doctorService.UpdateDepartmentAsync(id, dto, cancellationToken);
             return Ok(updated);
         }
@@ -119,6 +125,12 @@ namespace PulseID.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RemoveFromDepartment([FromQuery] Guid doctorId, CancellationToken cancellationToken)
         {
+            var existingDoctor = await _doctorService.GetByIdAsync(doctorId, cancellationToken);
+            if (existingDoctor is null) return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingDoctor, "DoctorOwnerOrAdmin");
+            if (!authResult.Succeeded)
+                return Forbid();
             await _doctorService.RemoveFromDepartment(doctorId, cancellationToken);
             return Ok(new { message = "Doctor Removed From Department successfully." });
         }
@@ -146,12 +158,18 @@ namespace PulseID.API.Controllers
 
 
         // DELETE: api/doctor/{id}
-        [Authorize(Roles = "HospitalAdmin,SuperAdmin")]
+        [Authorize(Roles = "HospitalAdmin,SuperAdmin,Doctor")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
+            var existingDoctor = await _doctorService.GetByIdAsync(id, cancellationToken);
+            if (existingDoctor is null) return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingDoctor, "DoctorOwnerOrAdmin");
+            if (!authResult.Succeeded)
+                return Forbid();
             await _doctorService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
@@ -182,6 +200,30 @@ namespace PulseID.API.Controllers
             return Ok(new { Message = "Record restored successfully." });
         }
 
+
+        [Authorize(Roles = "Doctor,SuperAdmin,HospitalAdmin")]
+        [HttpPut("{id:guid}/personal-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<DoctorDto>> UploadPersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _doctorService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "DoctorOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _doctorService.SetPersonalImageAsync(id, file, cancellationToken));
+        }
+
+        [Authorize(Roles = "Doctor,SuperAdmin,HospitalAdmin")]
+        [HttpPut("{id:guid}/personal-image/remove")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<DoctorDto>> RemovePersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _doctorService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "DoctorOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _doctorService.RemovePersonalImageAsync(id, cancellationToken));
+        }
 
 
         // PATCH: api/doctor/{id}/approve?hospitalAdminId=...

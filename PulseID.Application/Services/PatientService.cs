@@ -1,4 +1,5 @@
-﻿using PulseID.Application.Common.Exceptions;
+﻿using Microsoft.AspNetCore.Http;
+using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Patient;
 using PulseID.Application.Interfaces;
@@ -7,6 +8,7 @@ using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -18,13 +20,15 @@ namespace PulseID.Application.Services
     {
         readonly IUnitOfWork _unitOfWork;
         readonly IIdentityService _identityService;
-        public PatientService(IUnitOfWork unitOfWork, IIdentityService identityService)
+        readonly IFileStorageService _fileStorageService;
+        public PatientService(IUnitOfWork unitOfWork, IIdentityService identityService, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _identityService = identityService;
+            _fileStorageService = fileStorageService;
         }
 
-        static PatientDto ToDto(Patient patient, string email)
+        PatientDto ToDto(Patient patient, string email)
             => new()
             {
                 Id = patient.Id,
@@ -39,11 +43,37 @@ namespace PulseID.Application.Services
                 Address = patient.Address,
                 CreatedAt = patient.CreatedAt,
                 UpdatedAt = patient.UpdatedAt,
-                PersonalImageUrl = patient.PersonalImagePath
+                PersonalImageUrl = _fileStorageService.GetUrl(patient.PersonalImagePath)
             };
 
+        public async Task<PatientDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default)
+        {
+            var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
 
+            var oldPath = patient.PersonalImagePath;
+            var newPath = await _fileStorageService.SaveAsync(file, UploadFolder.PersonalImages, cancellationToken);
 
+            patient.SetPersonalImage(newPath);
+            _unitOfWork.Patients.Update(patient);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
+        }
+
+        public async Task<PatientDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
+            var oldPath = patient.PersonalImagePath;
+            patient.RemovePersonalImage();
+            _unitOfWork.Patients.Update(patient);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+            var email = await _identityService.GetEmailByUserIdAsync(patient.UserId, cancellationToken);
+            return ToDto(patient, email);
+        }
 
 
         public async Task<IReadOnlyList<PatientDto>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -95,8 +125,7 @@ namespace PulseID.Application.Services
                 patientDto.Gender,
                 patientDto.PhoneNumber,
                 patientDto.BloodType,
-                patientDto.Address,
-                patientDto.PersonalImagePath
+                patientDto.Address
                 );
 
             await _unitOfWork.Patients.AddAsync(patient, cancellationToken);
@@ -108,7 +137,7 @@ namespace PulseID.Application.Services
         {
             var patient = await _unitOfWork.Patients.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Patient), id);
             patient.UpdatePatientInfo(patientDto.FullName, patientDto.NationalId, patientDto.PhoneNumber, patientDto.Gender, patientDto.DateOfBirth,
-                patientDto.BloodType, patientDto.Address, patientDto.PersonalImagePath);
+                patientDto.BloodType, patientDto.Address);
 
             _unitOfWork.Patients.Update(patient);
             await _unitOfWork.SaveChangesAsync();

@@ -74,7 +74,7 @@ namespace PulseID.Application.Services
 
             await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
-            return record.MedicalFiles.Select(MedicalRecordService.ToFileDto).ToList();
+            return record.MedicalFiles.Select(f => MedicalFileMapper.ToDto(f, _uploadFileService)).ToList();
 
         }
 
@@ -104,7 +104,7 @@ namespace PulseID.Application.Services
             var currentUserId = RequireCurrentUserId();
             await _accessValidationService.EnsureAccessAsync(record.Patient, currentUserId, AccessScope.FullMedicalRecord, cancellationToken);
 
-            string filePath = await _uploadFileService.SaveToUploadsFolder(file, cancellationToken);
+            string filePath = await _uploadFileService.SaveAsync(file, UploadFolder.MedicalFiles, cancellationToken);
 
             var patient = await _unitOfWork.Patients.GetByIdAsync(record.PatientId, cancellationToken) ?? throw new NotFoundException(nameof(Patient), record.PatientId);
 
@@ -113,7 +113,7 @@ namespace PulseID.Application.Services
             await _unitOfWork.TrackAsAddedAsync(newFile, cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return MedicalRecordService.ToFileDto(newFile);
+            return MedicalFileMapper.ToDto(newFile, _uploadFileService);
 
         }
 

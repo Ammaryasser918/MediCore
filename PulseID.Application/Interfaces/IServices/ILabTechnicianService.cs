@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Http;
+using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Labs;
+using PulseID.Application.DTOs.Pharmacist;
 
 namespace PulseID.Application.Interfaces.Services;
 
@@ -31,4 +34,7 @@ public interface ILabTechnicianService
     Task<IReadOnlyList<LabTechnicianDto>> GetDeletedTechniciansAsync(CancellationToken cancellationToken = default);
 
     Task RestoreTechnicianAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<LabTechnicianDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default);
+    Task<LabTechnicianDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default);
 }

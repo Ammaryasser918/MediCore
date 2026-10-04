@@ -8,10 +8,14 @@ using System.Threading.Tasks;
 
 namespace PulseID.Application.Common.Interfaces
 {
+
+    public enum UploadFolder { MedicalFiles, PersonalImages }
+
     public interface IFileStorageService
     {
-        Task<string> SaveToUploadsFolder(IFormFile file, CancellationToken cancellationToken = default);
+        Task<string> SaveAsync(IFormFile file, UploadFolder folder, CancellationToken cancellationToken = default);
         Task<Stream> OpenReadAsync(string path, CancellationToken cancellationToken = default);
-        Task DeleteAsync(string path, CancellationToken cancellationToken = default);
+        Task DeleteAsync(string? path, CancellationToken cancellationToken = default);
+        string? GetUrl(string? path);
     }
 }

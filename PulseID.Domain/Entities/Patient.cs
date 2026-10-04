@@ -91,7 +91,7 @@ namespace PulseID.Domain.Entities
 
 
         public void UpdatePatientInfo(string fullName, string nationalId, string phoneNumber, Gender gender, 
-            DateTime dateOfBirth, BloodType? bloodType = null, string? address = null, string? personalImagePath = null)
+            DateTime dateOfBirth, BloodType? bloodType = null, string? address = null)
         {
             FullName = fullName;
             NationalId = nationalId;
@@ -100,9 +100,19 @@ namespace PulseID.Domain.Entities
             DateOfBirth = dateOfBirth;
             BloodType = bloodType;
             Address = address;
-            PersonalImagePath = personalImagePath;
             MarkAsUpdated();
 
+        }
+
+        public void SetPersonalImage(string? personalImagePath)
+        {
+            PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+        public void RemovePersonalImage()
+        {
+            PersonalImagePath = null;
+            MarkAsUpdated();
         }
 
         public void SetBloodType(BloodType bloodType)

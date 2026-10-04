@@ -19,6 +19,7 @@ using System.Text.Json;
 using System.Threading.RateLimiting;
 using PulseID.Infrastructure.Persistence;
 using PulseID.Infrastructure.Persistence.Seed;
+using Microsoft.Extensions.FileProviders;
 
 namespace PulseID.API
 {
@@ -169,7 +170,7 @@ namespace PulseID.API
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-            builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            builder.Services.AddScoped<IFileStorageService, HostFileStorageService>();
 
             builder.Services.AddAuthorization(options =>
             {
@@ -211,6 +212,11 @@ namespace PulseID.API
 
 
             var app = builder.Build();
+
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
             app.UseGlobalExceptionHandling();
 
 
@@ -286,6 +292,18 @@ namespace PulseID.API
             });
 
             app.UseHttpsRedirection();
+
+            var uploadContentTypes = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            uploadContentTypes.Mappings[".dcm"] = "application/dicom";
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(StoragePaths.GetRoot(app.Configuration, app.Environment)),
+                RequestPath = StoragePaths.RequestPath,
+                ContentTypeProvider = uploadContentTypes,
+                OnPrepareResponse = ctx => ctx.Context.Response.Headers["X-Content-Type-Options"] = "nosniff"
+            });
+
             app.UseCors("PulseIDApiCorsPolicy");
             app.UseAuthentication();
             app.UseAuthorization();

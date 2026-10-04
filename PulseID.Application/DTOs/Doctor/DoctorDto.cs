@@ -19,7 +19,6 @@ namespace PulseID.Application.DTOs.Doctor
         public string PhoneNumber { get; set; } = default!;
         public DateTime DateOfBirth { get; set; } 
         public int Age { get; set; }
-        public string? PersonalImagePath { get; set; }
         public DoctorStatus Status { get; set; }
         public Guid? DepartmentId { get; set; }
         public string? DepartmentName { get; set; } 
@@ -29,5 +28,6 @@ namespace PulseID.Application.DTOs.Doctor
         public DateTime? UpdatedAt { get; set; }
         public Guid? RejectedByAdminId { get; set; }
         public DateTime? RejectedAt { get; set; }
+        public string? PersonalImageUrl { get; set; }
     }
 }

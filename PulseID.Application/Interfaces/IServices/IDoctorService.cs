@@ -1,4 +1,6 @@
-﻿using PulseID.Application.DTOs.Doctor;
+﻿using Microsoft.AspNetCore.Http;
+using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Pharmacist;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,6 +23,8 @@ namespace PulseID.Application.Interfaces.IServices
         Task HardDeleteAsync(Guid doctorId, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<DoctorDto>> GetDeletedDoctorsAsync(CancellationToken cancellationToken = default);
         Task RestoreDoctorAsync(Guid doctorId, CancellationToken cancellationToken = default);
+        Task<DoctorDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default);
+        Task<DoctorDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default);
 
 
         // Approval Work Flow

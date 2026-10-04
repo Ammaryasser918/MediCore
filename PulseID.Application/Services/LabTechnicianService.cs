@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Labs;
@@ -12,12 +13,51 @@ public class LabTechnicianService : ILabTechnicianService
 {
     readonly IUnitOfWork _unitOfWork;
     readonly IIdentityService _identityService;
+    readonly IFileStorageService _fileStorageService;
 
-    public LabTechnicianService(IUnitOfWork unitOfWork, IIdentityService identityService)
+    public LabTechnicianService(IUnitOfWork unitOfWork, IIdentityService identityService, IFileStorageService fileStorageService)
     {
         _unitOfWork = unitOfWork;
         _identityService = identityService;
+        _fileStorageService = fileStorageService;
     }
+
+    public async Task<LabTechnicianDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default)
+    {
+        var labTech = await _unitOfWork.LabTechnicians.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(LabTechnician), id);
+        
+        var oldPath = labTech.PersonalImagePath;
+        var newPath = await _fileStorageService.SaveAsync(file, UploadFolder.PersonalImages, cancellationToken);
+
+        labTech.SetPersonalImage(newPath);
+        _unitOfWork.LabTechnicians.Update(labTech);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+
+        var email = await _identityService.GetEmailByUserIdAsync(labTech.UserId, cancellationToken);
+        return ToDto(labTech, email);
+
+    }
+
+
+    public  async Task<LabTechnicianDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var labTech = await _unitOfWork.LabTechnicians.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(LabTechnician), id);
+
+        var oldPath = labTech.PersonalImagePath;
+
+        labTech.RemovePersonalImage();
+
+        await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+        _unitOfWork.LabTechnicians.Update(labTech);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var email = await _identityService.GetEmailByUserIdAsync(labTech.UserId, cancellationToken);
+        return ToDto(labTech, email);
+
+    }
+
 
     public async Task<IReadOnlyList<LabTechnicianDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -67,8 +107,8 @@ public class LabTechnicianService : ILabTechnicianService
             dto.LicenseDocumentPath,
             dto.PhoneNumber,
             dto.DateOfBirth,
-            dto.LabId,
-            dto.PersonalImagePath);
+            dto.LabId
+            );
 
         await _unitOfWork.LabTechnicians.AddAsync(technician, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -92,8 +132,7 @@ public class LabTechnicianService : ILabTechnicianService
             dto.FullName,
             dto.NationalId,
             dto.PhoneNumber,
-            dto.DateOfBirth,
-            dto.PersonalImagePath);
+            dto.DateOfBirth);
 
         _unitOfWork.LabTechnicians.Update(technician);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -225,7 +264,7 @@ public class LabTechnicianService : ILabTechnicianService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    static LabTechnicianDto ToDto(LabTechnician technician, string email)
+    LabTechnicianDto ToDto(LabTechnician technician, string email)
     {
         return new LabTechnicianDto
         {
@@ -236,7 +275,7 @@ public class LabTechnicianService : ILabTechnicianService
             LicenseNumber = technician.LicenseNumber,
             LicenseDocumentPath = technician.LicenseDocumentPath,
             PhoneNumber = technician.PhoneNumber,
-            PersonalImagePath = technician.PersonalImagePath,
+            PersonalImageUrl = _fileStorageService.GetUrl(technician.PersonalImagePath),
             Status = technician.Status,
             LabId = technician.LabId,
             LabName = technician.Lab?.Name,

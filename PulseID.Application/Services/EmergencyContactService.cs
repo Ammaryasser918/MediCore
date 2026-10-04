@@ -30,7 +30,7 @@ namespace PulseID.Application.Services
         public async Task<IEnumerable<EmergencyContactDto>> GetPatientContactsAsync(Guid? patientId, CancellationToken cancellationToken = default)
         {
             var resolvedPatientId = await ResolvePatientIdAsync(patientId, cancellationToken);
-            await ValidateAccessAsync(resolvedPatientId, cancellationToken);
+            //await ValidateAccessAsync(resolvedPatientId, cancellationToken);
             var contacts = await _unitOfWork.EmergencyContact.GetByPatientIdAsync(resolvedPatientId, cancellationToken);
             return contacts.Select(ToDto);
         }
@@ -40,7 +40,7 @@ namespace PulseID.Application.Services
             var contact = await _unitOfWork.EmergencyContact.GetByIdAsync(Id, cancellationToken);
             if (contact is null) throw new NotFoundException("Emergency contact not found.");
 
-            await ValidateAccessAsync(contact.PatientId, cancellationToken);
+            //await ValidateAccessAsync(contact.PatientId, cancellationToken);
             return ToDto(contact);
         }
 

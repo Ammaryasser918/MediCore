@@ -1267,6 +1267,9 @@ namespace PulseID.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("PersonalImagePath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("PharmacyId")
                         .HasColumnType("uniqueidentifier");
 

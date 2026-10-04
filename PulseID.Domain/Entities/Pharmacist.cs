@@ -28,6 +28,7 @@ namespace PulseID.Domain.Entities
         public DateTime? ApprovedAt { get; private set; }
         public Guid? RejectedByAdminId { get; private set; }
         public DateTime? RejectedAt { get; private set; }
+        public string? PersonalImagePath { get; private set; }
 
 
         readonly List<PrescriptionItem> _dispensedItems = new List<PrescriptionItem>();
@@ -67,6 +68,17 @@ namespace PulseID.Domain.Entities
             NationalId = natinalId;
             PhoneNumber = phoneNumber;
             DateOfBirth = dateOfBirth;
+            MarkAsUpdated();
+        }
+
+        public void SetPersonalImage(string? personalImagePath)
+        {
+            PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+        public void RemovePersonalImage()
+        {
+            PersonalImagePath = null;
             MarkAsUpdated();
         }
 

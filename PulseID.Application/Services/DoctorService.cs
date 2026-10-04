@@ -1,4 +1,5 @@
-﻿using PulseID.Application.Common.Exceptions;
+﻿using Microsoft.AspNetCore.Http;
+using PulseID.Application.Common.Exceptions;
 using PulseID.Application.Common.Interfaces;
 using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Patient;
@@ -8,6 +9,7 @@ using PulseID.Domain.Common;
 using PulseID.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,14 +20,16 @@ namespace PulseID.Application.Services
     {
         readonly IUnitOfWork _unitOfWork;
         readonly IIdentityService _identityService;
-        
-        public DoctorService(IUnitOfWork unitOfWork, IIdentityService identityService)
+        readonly IFileStorageService _fileStorageService;
+
+        public DoctorService(IUnitOfWork unitOfWork, IIdentityService identityService, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _identityService = identityService;
+            _fileStorageService = fileStorageService;
         }
 
-        static DoctorDto ToDto(Doctor doctor, string email) => new()
+        DoctorDto ToDto(Doctor doctor, string email) => new()
         {
             Id = doctor.Id,
             Email = email,
@@ -37,7 +41,7 @@ namespace PulseID.Application.Services
             Age = doctor.Age,
             DateOfBirth = doctor.DateOfBirth,
             PhoneNumber = doctor.PhoneNumber,
-            PersonalImagePath = doctor.PersonalImagePath,
+            PersonalImageUrl = _fileStorageService.GetUrl(doctor.PersonalImagePath),
             Status = doctor.Status,
             DepartmentId = doctor.DepartmentId,
             DepartmentName = doctor.Department?.Name,
@@ -48,6 +52,39 @@ namespace PulseID.Application.Services
             RejectedAt = doctor.RejectedAt,
             RejectedByAdminId = doctor.RejectedByAdminId
         };
+
+
+        public async Task<DoctorDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
+
+            var oldPath = doctor.PersonalImagePath;
+            var newPath = await _fileStorageService.SaveAsync(file, UploadFolder.PersonalImages, cancellationToken);
+
+            doctor.SetPersonalImage(newPath);
+            _unitOfWork.Doctors.Update(doctor);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+
+            var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);
+            return ToDto(doctor, email);
+
+        }
+
+        public async Task<DoctorDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
+
+            var oldPath = doctor.PersonalImagePath;
+
+            doctor.RemovePersonalImage();
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+            _unitOfWork.Doctors.Update(doctor);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);
+            return ToDto(doctor, email);
+        }
 
         public async Task<IReadOnlyList<DoctorDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
@@ -105,8 +142,7 @@ namespace PulseID.Application.Services
                 doctorDto.Specialization,
                 doctorDto.PhoneNumber,
                 doctorDto.DateOfBirth,
-                doctorDto.DepartmentId,
-                doctorDto.PersonalImagePath
+                doctorDto.DepartmentId
                 );
 
             await _unitOfWork.Doctors.AddAsync(doctor, cancellationToken);
@@ -142,7 +178,7 @@ namespace PulseID.Application.Services
         public async Task<DoctorDto> UpdateAsync(Guid id, UpdateDoctorDto dto, CancellationToken cancellationToken = default)
         {
             var doctor = await _unitOfWork.Doctors.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Doctor), id);
-            doctor.UpdatePersonalDetails(dto.FullName, dto.NationalId, dto.PhoneNumber, dto.Specialization, dto.DateOfBirth, dto.PersonalImagePath);
+            doctor.UpdatePersonalDetails(dto.FullName, dto.NationalId, dto.PhoneNumber, dto.Specialization, dto.DateOfBirth);
             _unitOfWork.Doctors.Update(doctor);
             await _unitOfWork.SaveChangesAsync();
             var email = await _identityService.GetEmailByUserIdAsync(doctor.UserId, cancellationToken);

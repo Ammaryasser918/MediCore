@@ -20,12 +20,14 @@ namespace PulseID.Application.Services
         readonly IUnitOfWork _unitOfWork;
         readonly ICurrentUserService _currentUserService;
         readonly IAccessValidationService _accessValicationService;
-        
-        public MedicalRecordService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IAccessValidationService accessValicationService)
+        readonly IFileStorageService _fileStorageService;
+
+        public MedicalRecordService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IAccessValidationService accessValicationService, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _accessValicationService = accessValicationService;
+            _fileStorageService = fileStorageService;
         }
 
 

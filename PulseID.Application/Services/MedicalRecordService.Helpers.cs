@@ -32,7 +32,7 @@ namespace PulseID.Application.Services
             => _currentUserService.UserId ?? throw new AuthenticationRequiredException();
 
 
-        static MedicalRecordDto ToDto(MedicalRecord record) => new()
+        MedicalRecordDto ToDto(MedicalRecord record) => new()
         {
             Id = record.Id,
             PatientId = record.PatientId,
@@ -47,7 +47,7 @@ namespace PulseID.Application.Services
             PreviousVersionId = record.PreviousVersionId,
             RootRecordId = record.RootRecordId,
             IsLatestVersion = record.Status == MedicalRecordStatus.Active,
-            Files = record.MedicalFiles.Select(ToFileDto).ToList(),
+            Files = record.MedicalFiles.Select(f => MedicalFileMapper.ToDto(f, _fileStorageService)).ToList(),
             CreatedAt = record.CreatedAt,
             UpdatedAt = record.UpdatedAt
         };
@@ -87,18 +87,7 @@ namespace PulseID.Application.Services
             CreatedAt = record.CreatedAt
         };
 
-        internal static MedicalFileDto ToFileDto(MedicalFile file) => new()
-        {
-            Id = file.Id,
-            PatientId = file.PatientId,
-            MedicalRecordId = file.MedicalRecordId,
-            FileName = file.FileName,
-            FilePath = file.FilePath,
-            ContentType = file.ContentType,
-            FileType = file.FileType,
-            Description = file.Description,
-            CreatedAt = file.CreatedAt
-        };
+        
 
     }
 }

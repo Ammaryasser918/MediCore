@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using PulseID.Application.DTOs.Doctor;
 using PulseID.Application.DTOs.Labs;
 using PulseID.Application.Interfaces.Services;
 using System.Security.Claims;
@@ -13,10 +14,12 @@ namespace PulseID.API.Controllers;
 public class LabTechnicianController : ControllerBase
 {
     readonly ILabTechnicianService _labTechnicianService;
+    readonly IAuthorizationService _authorizationService;
 
-    public LabTechnicianController(ILabTechnicianService labTechnicianService)
+    public LabTechnicianController(ILabTechnicianService labTechnicianService, IAuthorizationService authorizationService)
     {
         _labTechnicianService = labTechnicianService;
+        _authorizationService = authorizationService;
     }
 
     [HttpGet]
@@ -40,6 +43,9 @@ public class LabTechnicianController : ControllerBase
 
         if (technician is null)
             return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, technician, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
 
         return Ok(technician);
     }
@@ -91,19 +97,57 @@ public class LabTechnicianController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(Guid id, UpdateLabTechnicianDto dto, CancellationToken cancellationToken)
     {
+        var existingTechnician = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+        if (existingTechnician is null) return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingTechnician, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         await _labTechnicianService.UpdateAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
     [HttpPut("{id:guid}/transfer/{labId:guid}")]
-    [Authorize(Roles = "LabAdmin,SuperAdmin")]
+    [Authorize(Roles = "LabAdmin,SuperAdmin,LabTechnician")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> TransferToLab(Guid id, Guid labId, CancellationToken cancellationToken)
     {
+        var existingTechnician = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+        if (existingTechnician is null) return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingTechnician, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         await _labTechnicianService.TransferToLabAsync(id, labId, cancellationToken);
         return NoContent();
     }
+
+
+    [Authorize(Roles = "LabTechnician,SuperAdmin,LabAdmin")]
+    [HttpPut("{id:guid}/personal-image")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<LabTechnicianDto>> UploadPersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var existing = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+        if (existing is null) return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, existing, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded) return Forbid();
+        return Ok(await _labTechnicianService.SetPersonalImageAsync(id, file, cancellationToken));
+    }
+
+    [Authorize(Roles = "LabTechnician,SuperAdmin,LabAdmin")]
+    [HttpPut("{id:guid}/personal-image/remove")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<LabTechnicianDto>> RemovePersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var existing = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+        if (existing is null) return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, existing, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded) return Forbid();
+        return Ok(await _labTechnicianService.RemovePersonalImageAsync(id, cancellationToken));
+    }
+
 
     [HttpPatch("{id:guid}/approve")]
     [Authorize(Roles = "LabAdmin,SuperAdmin")]
@@ -154,11 +198,17 @@ public class LabTechnicianController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "LabAdmin,SuperAdmin")]
+    [Authorize(Roles = "LabAdmin,SuperAdmin,LabTechnician")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var existingTechnician = await _labTechnicianService.GetByIdAsync(id, cancellationToken);
+        if (existingTechnician is null) return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingTechnician, "LabTechnicianOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         await _labTechnicianService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }

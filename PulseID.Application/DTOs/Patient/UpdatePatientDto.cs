@@ -16,6 +16,5 @@ namespace PulseID.Application.DTOs.Patient
         public Gender Gender { get; set; } 
         public BloodType? BloodType { get; set; }
         public DateTime DateOfBirth { get; set; }
-        public string? PersonalImagePath { get; set; }
     }
 }

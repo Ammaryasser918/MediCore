@@ -28,7 +28,7 @@ public class HospitalService : IHospitalService
         UpdatedAt = department.UpdatedAt
     };
 
-    static DoctorDto ToDoctorDto(Doctor doctor) => new()
+    DoctorDto ToDoctorDto(Doctor doctor) => new()
     {
         Id = doctor.Id,
         FullName = doctor.FullName,
@@ -37,7 +37,7 @@ public class HospitalService : IHospitalService
         NationalId = doctor.NationalId,
         Specialization = doctor.Specialization,
         PhoneNumber = doctor.PhoneNumber,
-        PersonalImagePath = doctor.PersonalImagePath,
+        PersonalImageUrl = doctor.PersonalImagePath,
         Status = doctor.Status,
         DepartmentId = doctor.DepartmentId,
         DepartmentName = doctor.Department?.Name,

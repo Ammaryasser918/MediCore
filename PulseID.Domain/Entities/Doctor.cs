@@ -65,17 +65,28 @@ namespace PulseID.Domain.Entities
             Status = DoctorStatus.Pending;
         }
 
-        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, string specialization, DateTime dateOfBirth, string? personalImagePath)
+        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, string specialization, DateTime dateOfBirth)
         {
             FullName = fullName;
             NationalId = nationalId;
             PhoneNumber = phoneNumber;
             Specialization = specialization;
             DateOfBirth = dateOfBirth;
-            if (!string.IsNullOrWhiteSpace(personalImagePath))
-                PersonalImagePath = personalImagePath;
+
             MarkAsUpdated();
         }
+
+        public void SetPersonalImage(string? personalImagePath)
+        {
+            PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+        public void RemovePersonalImage()
+        {
+            PersonalImagePath = null;
+            MarkAsUpdated();
+        }
+
 
         public void Approve(Guid adminId)
         {

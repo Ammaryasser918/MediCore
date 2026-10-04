@@ -60,48 +60,14 @@ namespace PulseID.API.Controllers
 
             var filePath = await _medicalFileService.UploadAndAttachAsync(medicalRecordId, file, medicalFileType, fileDescription, cancellationToken);
 
-            return Ok(new { filePath });
+            return Ok(filePath);
 
         }
 
-        [HttpGet("GetFile/{fileName}")]
-        public IActionResult GetFile(string fileName)
-        {
-            var uploadDirectory = @"D:\VS_projects\PulseID\PulseID.API\FileUploads";
-            var filePath = Path.Combine(uploadDirectory, fileName);
-
-            if (!System.IO.File.Exists(filePath))
-                return NotFound(fileName);
-
-            var file = System.IO.File.OpenRead(filePath);
-            var mimeType = GetMimeType(filePath);
-
-            return File(file, mimeType);
-
-        }
+        
 
 
-        [HttpGet("DownloadFile/{fileName}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DownloadFile(string fileName)
-        {
-            string folderPath = @"D:\VS_projects\PulseID\PulseID.API\FileUploads";
-            string path = Path.Combine(folderPath, fileName);
-
-            if (System.IO.File.Exists(path))
-            {
-                byte[] bytes = await (System.IO.File.ReadAllBytesAsync(path));
-                return File(bytes, "application/octet-stream", fileName);
-            }
-            else
-            {
-                return NotFound($"File: '{fileName}' Not Found.");
-            }
-
-        }
+        
 
         [HttpGet("DownloadFileAsync/{fileName}")]
         public async Task<IActionResult> Download(Guid medicalRecordId, Guid fileId, CancellationToken cancellationToken)
@@ -123,20 +89,6 @@ namespace PulseID.API.Controllers
             return NoContent();
         }
 
-        
-
-        // A helper method to tell browsers (Client) about the data they are handling
-        private string GetMimeType(string filePath)
-        {
-            var extension = Path.GetExtension(filePath).ToLowerInvariant();
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".pdf" => "application/pdf",
-                _ => "application/octet-stream",
-            };
-        }
 
 
 

@@ -121,12 +121,17 @@ namespace PulseID.API.Controllers
 
 
         // DELETE: api/Pharmacists/{id}
-        [Authorize(Roles = "PharmacyAdmin,SuperAdmin")]
+        [Authorize(Roles = "PharmacyAdmin,SuperAdmin,Pharmacist")]
         [HttpDelete("{id:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
+            var existingPharmacist = await _pharmacistService.GetByIdAsync(id, cancellationToken);
+            if (existingPharmacist is null) return NotFound();
+
+            var authResult = await _authorizationService.AuthorizeAsync(User, existingPharmacist, "PharmacistOwnerOrAdmin");
+            if (!authResult.Succeeded) return Forbid();
             await _pharmacistService.DeleteAsync(id, cancellationToken);
             return NoContent();
         }
@@ -157,6 +162,30 @@ namespace PulseID.API.Controllers
             return Ok(new { Message = "Record restored successfully." });
         }
 
+
+        [Authorize(Roles = "Pharmacist,SuperAdmin,PharmacyAdmin")]
+        [HttpPut("{id:guid}/personal-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PharmacistDto>> UploadPersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _pharmacistService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "PharmacistOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _pharmacistService.SetPersonalImageAsync(id, file, cancellationToken));
+        }
+
+        [Authorize(Roles = "Pharmacist,SuperAdmin,PharmacyAdmin")]
+        [HttpPut("{id:guid}/personal-image/remove")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<PharmacistDto>> RemovePersonalImage(Guid id, IFormFile file, CancellationToken cancellationToken)
+        {
+            var existing = await _pharmacistService.GetByIdAsync(id, cancellationToken);
+            if (existing is null) return NotFound();
+            var auth = await _authorizationService.AuthorizeAsync(User, existing, "PharmacistOwnerOrAdmin");
+            if (!auth.Succeeded) return Forbid();
+            return Ok(await _pharmacistService.RemovePersonalImageAsync(id, cancellationToken));
+        }
 
 
         // PATCH: api/pharmacists/{id}/approve?pharmacyAdminId=...

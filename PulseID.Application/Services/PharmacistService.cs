@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http;
 
 namespace PulseID.Application.Services
 {
@@ -21,14 +23,17 @@ namespace PulseID.Application.Services
         readonly IUnitOfWork _unitOfWork;
         readonly IIdentityService _identityService;
         readonly ICurrentUserService _currentUserService;
-        public PharmacistService(IUnitOfWork unitOfWork, IIdentityService identityService, ICurrentUserService currentUserService)
+        readonly IFileStorageService _fileStorageService;
+
+        public PharmacistService(IUnitOfWork unitOfWork, IIdentityService identityService, ICurrentUserService currentUserService, IFileStorageService fileStorageService)
         {
             _unitOfWork = unitOfWork;
             _identityService = identityService;
             _currentUserService = currentUserService;
+            _fileStorageService = fileStorageService;
         }
 
-        static PharmacistDto ToDto(Pharmacist pharmacist, string email) 
+        PharmacistDto ToDto(Pharmacist pharmacist, string email) 
             => new()
                     {
                         Id = pharmacist.Id,
@@ -48,8 +53,38 @@ namespace PulseID.Application.Services
                         CreatedAt = pharmacist.CreatedAt,
                         UpdatedAt = pharmacist.UpdatedAt,
                         RejectedByAdminId = pharmacist.RejectedByAdminId,
-                        RejectedAt = pharmacist.RejectedAt
-                    };
+                        RejectedAt = pharmacist.RejectedAt,
+                        PersonalImageUrl = _fileStorageService.GetUrl(pharmacist.PersonalImagePath)
+            };
+
+        public async Task<PharmacistDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default)
+        {
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
+
+            var oldPath = pharmacist.PersonalImagePath;
+            var newPath = await _fileStorageService.SaveAsync(file, UploadFolder.PersonalImages, cancellationToken);
+
+            pharmacist.SetPersonalImage(newPath);
+            _unitOfWork.Pharmacists.Update(pharmacist);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
+        }
+
+        public async Task<PharmacistDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var pharmacist = await _unitOfWork.Pharmacists.GetByIdAsync(id, cancellationToken) ?? throw new NotFoundException(nameof(Pharmacist), id);
+            var oldPath = pharmacist.PersonalImagePath;
+            pharmacist.RemovePersonalImage();
+            _unitOfWork.Pharmacists.Update(pharmacist);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _fileStorageService.DeleteAsync(oldPath, cancellationToken);
+            var email = await _identityService.GetEmailByUserIdAsync(pharmacist.UserId, cancellationToken);
+            return ToDto(pharmacist, email);
+        }
 
 
         public async Task<IReadOnlyList<PharmacistDto>> GetAllAsync(CancellationToken cancellationToken = default)

@@ -1,4 +1,6 @@
-﻿using PulseID.Application.DTOs.Doctor;
+﻿using Microsoft.AspNetCore.Http;
+using PulseID.Application.DTOs.Doctor;
+using PulseID.Application.DTOs.Patient;
 using PulseID.Application.DTOs.Pharmacist;
 using PulseID.Domain.Entities;
 using System;
@@ -30,6 +32,9 @@ namespace PulseID.Application.Interfaces.IServices
         Task<PharmacistDto> RejectAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
         Task<PharmacistDto> DeactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
         Task<PharmacistDto> ReactivateAsync(Guid id, Guid pharmacyAdminId, CancellationToken cancellationToken = default);
+
+        Task<PharmacistDto> SetPersonalImageAsync(Guid id, IFormFile file, CancellationToken cancellationToken = default);
+        Task<PharmacistDto> RemovePersonalImageAsync(Guid id, CancellationToken cancellationToken = default);
 
 
     }
