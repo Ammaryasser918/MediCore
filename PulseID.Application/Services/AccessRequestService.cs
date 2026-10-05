@@ -36,15 +36,15 @@ namespace PulseID.Application.Services
 
         public async Task<AccessRequestDto> RequestAccessAsync(Guid patientId, RequestPatientAccessDto dto, CancellationToken cancellationToken = default)
         {
-            var doctor = await GetRequestingApprovedDoctorAsync(cancellationToken);
+            var (requesterUserId, requesterRole) = await GetApprovedRequesterAsync(cancellationToken);
             var patient = await _unitOfWork.Patients.GetByIdAsync(patientId, cancellationToken)
                 ?? throw new NotFoundException(nameof(Patient), patientId);
 
-            var activeAccess = await _unitOfWork.AccessAuthorizations.GetActiveAuthorizationAsync(patientId, doctor.UserId, cancellationToken);
+            var activeAccess = await _unitOfWork.AccessAuthorizations.GetActiveAuthorizationAsync(patientId, requesterUserId, cancellationToken);
             if (activeAccess is not null)
                 throw new BusinessRuleViolationException("You already have a pending access request for this patient, Ask the patient for the OTP that was already sent.");
 
-            var accessRequest = new AccessAuthorization(patientId, doctor.UserId, "Doctor", dto.Scope, dto.Purpose, dto.RequesteDurationMinutes);
+            var accessRequest = new AccessAuthorization(patientId, requesterUserId, requesterRole, dto.Scope, dto.Purpose, dto.RequesteDurationMinutes);
 
             await _unitOfWork.AccessAuthorizations.AddAsync(accessRequest, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -77,11 +77,11 @@ namespace PulseID.Application.Services
 
         public async Task<AccessRequestDto> VerifyAccessOtpAsync(Guid accessRequestId, VerifyAccessOtpDto dto, CancellationToken cancellationToken = default)
         {
-            var doctor = await GetRequestingApprovedDoctorAsync(cancellationToken);
+            var (requesterUserId, requesterRole) = await GetApprovedRequesterAsync(cancellationToken);
             var accessRequest = await _unitOfWork.AccessAuthorizations.GetByIdAsync(accessRequestId, cancellationToken)
                 ?? throw new NotFoundException(nameof(AccessAuthorization), accessRequestId);
 
-            if (accessRequest.GranteeUserId != doctor.UserId)
+            if (accessRequest.GranteeUserId != requesterUserId)
                 throw new ForbiddenAccessException("This access request does not belong to you.");
 
             var patient = await _unitOfWork.Patients.GetByIdAsync(accessRequest.PatientId, cancellationToken)
@@ -206,16 +206,26 @@ namespace PulseID.Application.Services
 
         // ----- Helpers
 
-        private async Task<Doctor> GetRequestingApprovedDoctorAsync(CancellationToken cancellationToken)
+        private async Task<(Guid userId, string Role)> GetApprovedRequesterAsync(CancellationToken cancellationToken)
         {
             var currentUserId = _currentUserService.UserId ?? throw new AuthenticationRequiredException();
 
-            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken)
-                ?? throw new ForbiddenAccessException("Only a registered doctor can perform this action.");
+            var doctor = await _unitOfWork.Doctors.GetByUserIdAsync(currentUserId, cancellationToken);
+            if (doctor is not null)
+            {
+                if (doctor.Status != Domain.Enums.DoctorStatus.Approved)
+                    throw new ForbiddenAccessException("Only an approved doctor can perform this action.");
+                return (doctor.UserId, AppRoles.Doctor);
+            }
 
-            if (doctor.Status != Domain.Enums.DoctorStatus.Approved)
-                throw new ForbiddenAccessException("Only an approved doctor can perform this action.");
-            return doctor;
+            var pharmacist = await _unitOfWork.Pharmacists.GetByUserIdAsync(currentUserId, cancellationToken);
+            if (pharmacist is not null)
+            {
+                if (pharmacist.Status != Domain.Enums.PharmacistStatus.Approved)
+                    throw new ForbiddenAccessException("Only an approved pharmacist can perform this action.");
+                return (pharmacist.UserId, AppRoles.Pharmacist);
+            }
+            throw new ForbiddenAccessException("Only an approved doctor or pharmacist can perform this action.");
 
         }
 

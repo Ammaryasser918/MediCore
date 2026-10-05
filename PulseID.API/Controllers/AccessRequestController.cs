@@ -34,11 +34,11 @@ namespace PulseID.API.Controllers
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var result = await _accessRequestService.RequestAccessAsync(patientId, dto, cancellationToken);
-            var auth = await _authorizationService.AuthorizeAsync(User, result, "AccessRequestOwnerOrAdmin");
-            if (!auth.Succeeded)
-            {
-                return Forbid();
-            }
+            //var auth = await _authorizationService.AuthorizeAsync(User, result, "AccessRequestOwnerOrAdmin");
+            //if (!auth.Succeeded)
+            //{
+            //    return Forbid();
+            //}
             return Ok(result);
         }
 
@@ -52,6 +52,11 @@ namespace PulseID.API.Controllers
         public async Task<ActionResult<AccessRequestDto>> VerifyOtp(Guid id, VerifyAccessOtpDto dto, CancellationToken cancellationToken)
         {
             var result = await _accessRequestService.VerifyAccessOtpAsync(id, dto, cancellationToken);
+            var auth = await _authorizationService.AuthorizeAsync(User, result, "AccessRequestOwnerOrAdmin");
+            if (!auth.Succeeded)
+            {
+                return Forbid();
+            }
             return Ok(result);
         }
 
