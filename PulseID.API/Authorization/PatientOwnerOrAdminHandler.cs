@@ -22,7 +22,7 @@ namespace PulseID.API.Authorization
         {
             var currentUserId = _currentUserService.UserId;
             if (currentUserId is null) return;
-            if (context.User.IsInRole("SuperAdmin") || context.User.IsInRole("HospitalAdmin") || context.User.IsInRole("Doctor"))
+            if (context.User.IsInRole("SuperAdmin") || context.User.IsInRole("HospitalAdmin") || context.User.IsInRole("Doctor") || context.User.IsInRole("Pharmacist"))
             {
                 context.Succeed(requirement);
                 return;
