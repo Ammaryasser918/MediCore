@@ -46,7 +46,7 @@ namespace PulseID.Application.Services
                 throw new BusinessRuleViolationException(
                     $"Doctor {doctor.Id} has an invalid DepartmentId ({doctor.DepartmentId}) — it doesn't match any existing Department. Fix the doctor's department assignment before retrying.");
 
-            Guid currentUserId = RequireCurrentUserId();
+            //Guid currentUserId = RequireCurrentUserId();
 
 
             var record = new MedicalRecord(

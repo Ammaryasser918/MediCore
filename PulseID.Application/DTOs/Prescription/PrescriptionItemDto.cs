@@ -18,7 +18,7 @@ public class PrescriptionItemDto
 
     public PrescriptionItemStatus Status { get; set; }
 
-    public Guid? DispensedByPharmacistId { get; set; }
+    public Guid? DispensedByUserId { get; set; }
 
     public DateTime? DispensedAt { get; set; }
 }

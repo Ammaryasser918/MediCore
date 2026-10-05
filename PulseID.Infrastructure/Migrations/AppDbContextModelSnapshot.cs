@@ -1479,6 +1479,9 @@ namespace PulseID.Infrastructure.Migrations
                     b.Property<Guid?>("DispensedByPharmacistId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("DispensedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Dosage")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1487,8 +1490,7 @@ namespace PulseID.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Instructions")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1508,6 +1510,8 @@ namespace PulseID.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DispensedByPharmacistId");
+
+                    b.HasIndex("DispensedByUserId");
 
                     b.HasIndex("MedicationId");
 
@@ -1988,7 +1992,11 @@ namespace PulseID.Infrastructure.Migrations
                 {
                     b.HasOne("PulseID.Domain.Entities.Pharmacist", "DispensedByPharmacist")
                         .WithMany("PrescriptionItems")
-                        .HasForeignKey("DispensedByPharmacistId")
+                        .HasForeignKey("DispensedByPharmacistId");
+
+                    b.HasOne("PulseID.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("DispensedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PulseID.Domain.Entities.Medication", "Medication")

@@ -181,6 +181,7 @@ namespace PulseID.API
                 options.AddPolicy("LabTestRequestOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
                 options.AddPolicy("LabTechnicianOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
                 options.AddPolicy("AccessRequestOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
+                options.AddPolicy("PrescriptionOwnerOrAdmin", policy => policy.Requirements.Add(new OwnerShipRequirement()));
             });
             //builder.Services.AddMemoryCache();
 
@@ -192,6 +193,7 @@ namespace PulseID.API
             builder.Services.AddScoped<IAuthorizationHandler, LabTestRequestOwnerOrAdminHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, LabTechnicianOwnerOrAdminHandler>();
             builder.Services.AddScoped<IAuthorizationHandler, AccessRequestOwnerOrAdminHandler>();
+            builder.Services.AddScoped<IAuthorizationHandler, PrescriptionOwnerOrAdminHandler>();
 
 
             builder.Services.AddCors(options =>

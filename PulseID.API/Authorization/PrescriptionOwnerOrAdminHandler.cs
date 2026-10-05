@@ -9,18 +9,18 @@ namespace PulseID.API.Authorization
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IPatientService _patientService;
+        private readonly IDoctorService _doctorService;
 
-        public PrescriptionOwnerOrAdminHandler(ICurrentUserService currentUserService, IPatientService patientService)
+        public PrescriptionOwnerOrAdminHandler(ICurrentUserService currentUserService, IPatientService patientService, IDoctorService doctorService)
         {
             _currentUserService = currentUserService;
             _patientService = patientService;
+            _doctorService = doctorService;
         }
 
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, OwnerShipRequirement requirement, PrescriptionDto resource)
         {
-            if (context.User.IsInRole("SuperAdmin") || context.User.IsInRole("HospitalAdmin")
-                || context.User.IsInRole("Doctor") || context.User.IsInRole("Pharmacist")
-                || context.User.IsInRole("PharmacyAdmin"))
+            if (context.User.IsInRole("SuperAdmin") || context.User.IsInRole("HospitalAdmin") || context.User.IsInRole("PharmacyAdmin") || context.User.IsInRole("Pharmacist"))
             {
                 context.Succeed(requirement);
                 return;
@@ -29,12 +29,26 @@ namespace PulseID.API.Authorization
             var currentUserId = _currentUserService.UserId;
             if (currentUserId is null) return;
 
-            var currentPatient = await _patientService.GetByUserIdAsync(currentUserId.Value);
-            if (currentPatient is not null && resource.PatientId == currentPatient.Id)
+            if (context.User.IsInRole("Patient"))
             {
-                context.Succeed(requirement);
+                var currentPatient = await _patientService.GetByUserIdAsync(currentUserId.Value);
+                if (currentPatient is not null && resource.PatientId == currentPatient.Id)
+                {
+                    context.Succeed(requirement);
+                    return;
+                }
             }
-            return;
+
+            if (context.User.IsInRole("Doctor"))
+            {
+                var currentDoctor = await _doctorService.GetByUserIdAsync(currentUserId.Value);
+                if (currentDoctor is not null && resource.DoctorId == currentDoctor.Id)
+                {
+                    context.Succeed(requirement);
+                    return;
+                }
+            }
+
 
         }
 

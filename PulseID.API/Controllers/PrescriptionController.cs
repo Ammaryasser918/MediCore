@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PulseID.Application.DTOs.Prescriptions;
 using PulseID.Application.Interfaces.Services;
+using PulseID.Domain.Entities;
 using PulseID.Domain.Enums;
+using System.Security.Claims;
 
 namespace PulseID.API.Controllers;
 
@@ -13,10 +15,12 @@ namespace PulseID.API.Controllers;
 public class PrescriptionController : ControllerBase
 {
     readonly IPrescriptionService _prescriptionService;
+    readonly IAuthorizationService _authorizationService;
 
-    public PrescriptionController(IPrescriptionService prescriptionService)
+    public PrescriptionController(IPrescriptionService prescriptionService, IAuthorizationService authorizationService)
     {
         _prescriptionService = prescriptionService;
+        _authorizationService = authorizationService;
     }
 
     [HttpGet("by-medical-record/{medicalRecordId:guid}")]
@@ -26,7 +30,16 @@ public class PrescriptionController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<PrescriptionDto>>> GetByMedicalRecord(Guid medicalRecordId, CancellationToken cancellationToken)
     {
         var prescriptions = await _prescriptionService.GetByMedicalRecordAsync(medicalRecordId, cancellationToken);
-        return Ok(prescriptions);
+        var authorized = new List<PrescriptionDto>();
+        foreach (var prescription in prescriptions)
+        {
+            var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+            if (auth.Succeeded)
+            {
+                authorized.Add(prescription);
+            }
+        }
+        return Ok(authorized);
     }
 
     [HttpGet("by-status/{status}")]
@@ -35,8 +48,22 @@ public class PrescriptionController : ControllerBase
     [EnableRateLimiting("BigDataLimiter")]
     public async Task<ActionResult<IReadOnlyList<PrescriptionDto>>> GetByStatus(PrescriptionStatus status, CancellationToken cancellationToken)
     {
+        if (!Enum.IsDefined(typeof(PrescriptionStatus), status))
+        {
+            return BadRequest("Invalid prescription status.");
+        }
+
         var prescriptions = await _prescriptionService.GetByStatusAsync(status, cancellationToken);
-        return Ok(prescriptions);
+        var authorized = new List<PrescriptionDto>();
+        foreach (var prescription in prescriptions)
+        {
+            var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+            if (auth.Succeeded)
+            {
+                authorized.Add(prescription);
+            }
+        }
+        return Ok(authorized);
     }
 
     [HttpGet("{id:guid}")]
@@ -51,6 +78,9 @@ public class PrescriptionController : ControllerBase
 
         if (prescription is null)
             return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
 
         return Ok(prescription);
     }
@@ -67,6 +97,9 @@ public class PrescriptionController : ControllerBase
 
         if (prescription is null)
             return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
 
         return Ok(prescription);
     }
@@ -78,6 +111,9 @@ public class PrescriptionController : ControllerBase
     public async Task<ActionResult<PrescriptionDto>> Create(CreatePrescriptionDto dto, CancellationToken cancellationToken)
     {
         var prescription = await _prescriptionService.CreateAsync(dto, cancellationToken);
+        var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         return CreatedAtAction(nameof(GetById), new { id = prescription.Id }, prescription);
     }
 
@@ -89,6 +125,11 @@ public class PrescriptionController : ControllerBase
     public async Task<ActionResult<PrescriptionDto>> Update(Guid id, UpdatePrescriptionDto dto, CancellationToken cancellationToken)
     {
         var prescription = await _prescriptionService.UpdateAsync(id, dto, cancellationToken);
+        if (prescription is null)
+            return NotFound();
+        var auth = await _authorizationService.AuthorizeAsync(User, prescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         return Ok(prescription);
     }
 
@@ -98,8 +139,15 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddItem(Guid id, AddPrescriptionItemDto dto, CancellationToken cancellationToken)
     {
+        var existingPrescription = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existingPrescription is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingPrescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         await _prescriptionService.AddItemAsync(id, dto, cancellationToken);
-        return NoContent();
+        return Ok(new { Message = "Prescription item added successfully.", PrescriptionId = id });
     }
 
     [HttpPut("{id:guid}/items/{itemId:guid}")]
@@ -108,8 +156,15 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateItem(Guid id, Guid itemId, UpdatePrescriptionItemDto dto, CancellationToken cancellationToken)
     {
+        var existingPrescription = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existingPrescription is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingPrescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
         await _prescriptionService.UpdateItemAsync(id, itemId, dto, cancellationToken);
-        return NoContent();
+        return Ok(new { Message = "Prescription item updated successfully.", PrescriptionId = id, ItemId = itemId });
     }
 
     [HttpDelete("{id:guid}/items/{itemId:guid}")]
@@ -118,8 +173,16 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveItem(Guid id, Guid itemId, CancellationToken cancellationToken)
     {
+        var existingPrescription = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existingPrescription is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existingPrescription, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
+
         await _prescriptionService.RemoveItemAsync(id, itemId, cancellationToken);
-        return NoContent();
+        return Ok(new { Message = "Prescription item removed successfully.", PrescriptionId = id, ItemId = itemId });
     }
 
     [HttpPut("{id:guid}/verify")]
@@ -128,8 +191,16 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Verify(Guid id, CancellationToken cancellationToken)
     {
+        var existing = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existing, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
+
         await _prescriptionService.VerifyAsync(id, cancellationToken);
-        return NoContent();
+        return Ok(new { Message = "Prescription verified successfully.", PrescriptionId = id });
     }
 
     [HttpPut("{id:guid}/items/{itemId:guid}/dispense")]
@@ -137,10 +208,21 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> DispenseItem(Guid id, Guid itemId, [FromBody] Guid pharmacistId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DispenseItem(Guid id, Guid itemId, CancellationToken cancellationToken)
     {
-        await _prescriptionService.DispenseItemAsync(id, itemId, pharmacistId, cancellationToken);
-        return NoContent();
+        var existing = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existing, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
+
+        var dispenserUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(dispenserUserId, out var dispenserId))
+            throw new UnauthorizedAccessException("Invalid user ID.");
+        await _prescriptionService.DispenseItemAsync(id, itemId, dispenserId, cancellationToken);
+        return Ok(new { Message = "Prescription item dispensed successfully.", PrescriptionId = id, ItemId = itemId });
     }
 
     [HttpPut("{id:guid}/cancel")]
@@ -150,8 +232,16 @@ public class PrescriptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
     {
+        var existing = await _prescriptionService.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+            return NotFound();
+
+        var auth = await _authorizationService.AuthorizeAsync(User, existing, "PrescriptionOwnerOrAdmin");
+        if (!auth.Succeeded)
+            return Forbid();
+
         await _prescriptionService.CancelAsync(id, cancellationToken);
-        return NoContent();
+        return Ok(new { Message = "Prescription cancelled successfully.", PrescriptionId = id });
     }
 
     [HttpDelete("{id:guid}")]

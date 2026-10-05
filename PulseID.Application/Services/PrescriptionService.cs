@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PulseID.Application.Common.Exceptions;
 using PulseID.Application.DTOs.Prescriptions;
 using PulseID.Application.Interfaces;
@@ -18,7 +19,8 @@ public class PrescriptionService : IPrescriptionService
 
     public async Task<IReadOnlyList<PrescriptionDto>> GetByMedicalRecordAsync(Guid medicalRecordId, CancellationToken cancellationToken = default)
     {
-        var prescriptions = await _unitOfWork.Prescriptions.GetByMedicalRecordAsync(medicalRecordId, cancellationToken);
+        var prescriptions = await _unitOfWork.Prescriptions.GetByMedicalRecordAsync(medicalRecordId, cancellationToken)
+            ?? throw new NotFoundException("Medical record or prescriptions not found.");
 
         return prescriptions.Select(ToDto).ToList();
     }
@@ -32,14 +34,16 @@ public class PrescriptionService : IPrescriptionService
 
     public async Task<PrescriptionDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(id, cancellationToken);
+        var prescription = await _unitOfWork.Prescriptions.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException($"Prescription with id '{id}' was not found.");
 
         return prescription is null ? null : ToDto(prescription);
     }
 
     public async Task<PrescriptionDto?> GetWithItemsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var prescription = await _unitOfWork.Prescriptions.GetWithItemsAsync(id, cancellationToken);
+        var prescription = await _unitOfWork.Prescriptions.GetWithItemsAsync(id, cancellationToken)
+            ?? throw new NotFoundException($"Prescription with id '{id}' was not found.");
 
         return prescription is null ? null : ToDto(prescription);
     }
@@ -51,7 +55,10 @@ public class PrescriptionService : IPrescriptionService
         await _unitOfWork.Prescriptions.AddAsync(prescription, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return ToDto(prescription);
+        var createdPrescription = await _unitOfWork.Prescriptions.GetByIdAsync(prescription.Id, cancellationToken)
+            ?? throw new NotFoundException($"Prescription with id '{prescription.Id}' was not found.");
+
+        return ToDto(createdPrescription);
     }
 
     public async Task<PrescriptionDto> UpdateAsync(Guid id, UpdatePrescriptionDto dto, CancellationToken cancellationToken = default)
@@ -76,9 +83,11 @@ public class PrescriptionService : IPrescriptionService
         if (prescription is null)
             throw new NotFoundException($"Prescription with id '{prescriptionId}' was not found.");
 
-        prescription.AddItem(dto.MedicationId, dto.Dosage, dto.Duration, dto.Instructions);
+        //prescription.AddItem(dto.MedicationId, dto.Dosage, dto.Duration, dto.Instructions);
+        var item = prescription.AddItem(dto.MedicationId, dto.Dosage, dto.Duration, dto.Instructions);
 
-        _unitOfWork.Prescriptions.Update(prescription);
+        await _unitOfWork.TrackAsAddedAsync(item, cancellationToken);
+        //_unitOfWork.Prescriptions.Update(prescription);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
@@ -131,7 +140,7 @@ public class PrescriptionService : IPrescriptionService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DispenseItemAsync(Guid prescriptionId, Guid itemId, Guid pharmacistId, CancellationToken cancellationToken = default)
+    public async Task DispenseItemAsync(Guid prescriptionId, Guid itemId, Guid dispenserId, CancellationToken cancellationToken = default)
     {
         var prescription = await _unitOfWork.Prescriptions.GetWithItemsAsync(prescriptionId, cancellationToken);
 
@@ -143,10 +152,10 @@ public class PrescriptionService : IPrescriptionService
         if (item is null)
             throw new NotFoundException($"Prescription item with id '{itemId}' was not found.");
 
-        item.Dispense(pharmacistId);
+        item.Dispense(dispenserId);
         prescription.RefreshStatus();
 
-        _unitOfWork.Prescriptions.Update(prescription);
+        //_unitOfWork.Prescriptions.Update(prescription);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
@@ -221,12 +230,12 @@ public class PrescriptionService : IPrescriptionService
         {
             Id = item.Id,
             MedicationId = item.MedicationId,
-            MedicationName = item.Medication.CommercialNameEn,
+            MedicationName = item.Medication.CommercialNameEn ?? string.Empty,
             Dosage = item.Dosage,
             Duration = item.Duration,
             Instructions = item.Instructions,
             Status = item.Status,
-            DispensedByPharmacistId = item.DispensedByPharmacistId,
+            DispensedByUserId = item.DispensedByUserId,
             DispensedAt = item.DispensedAt
         };
     }

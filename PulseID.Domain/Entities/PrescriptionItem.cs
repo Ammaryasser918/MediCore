@@ -24,7 +24,7 @@ namespace PulseID.Domain.Entities
 
         public PrescriptionItemStatus Status { get; private set; } = PrescriptionItemStatus.Pending;
 
-        public Guid? DispensedByPharmacistId { get; private set; }
+        public Guid? DispensedByUserId { get; private set; }
         public Pharmacist? DispensedByPharmacist { get; private set; }
 
         public DateTime? DispensedAt { get; private set; }
@@ -51,6 +51,12 @@ namespace PulseID.Domain.Entities
 
         public void UpdateDetails(Guid medicationId, string dosage, int duration, string? instructions = null)
         {
+            if (Status != PrescriptionItemStatus.Pending)
+                throw new BusinessRuleViolationException("Can only update a pending medication.");
+
+            if (medicationId == Guid.Empty)
+                throw new ArgumentException("Medication ID is required.", nameof(medicationId));
+
             if (Status == PrescriptionItemStatus.Dispensed)
                 throw new BusinessRuleViolationException("Can't update a dispensed medication.");
 
@@ -71,17 +77,18 @@ namespace PulseID.Domain.Entities
             MarkAsUpdated();
         }
 
-        public void Dispense(Guid pharmacistId)
+        public void Dispense(Guid dispenserUserId)
         {
-            if (pharmacistId == Guid.Empty)
-                throw new ArgumentException("Pharmacist Id is required.", nameof(pharmacistId));
+            if (dispenserUserId == Guid.Empty)
+                throw new ArgumentException("Pharmacist Id is required.", nameof(dispenserUserId));
 
             if (Status == PrescriptionItemStatus.Dispensed)
                 throw new BusinessRuleViolationException("This Medication is already dispensed");
 
 
+
             Status = PrescriptionItemStatus.Dispensed;
-            DispensedByPharmacistId = pharmacistId;
+            DispensedByUserId = dispenserUserId;
             DispensedAt = DateTime.UtcNow;
             MarkAsUpdated();
 

@@ -25,6 +25,7 @@ namespace PulseID.Domain.Entities
 
         readonly List<PrescriptionItem> _prescriptionItems = new List<PrescriptionItem>();
         public IReadOnlyCollection<PrescriptionItem> PrescriptionItems => _prescriptionItems.AsReadOnly();
+        IEnumerable<PrescriptionItem> ActiveItems => _prescriptionItems.Where(i => !i.IsDeleted);
 
         Prescription() { }
 
@@ -52,6 +53,8 @@ namespace PulseID.Domain.Entities
         {
             if (Status != PrescriptionStatus.Created)
                 throw new BusinessRuleViolationException("Can't add medications after prescription is verified");
+            if (ActiveItems.Any(i => i.MedicationId == medicationId && i.Id != Guid.Empty))
+                throw new BusinessRuleViolationException("This medication is already part of the prescription. Update the existing item instead of adding it twice.");
 
             var item = new PrescriptionItem(Id, medicationId, dosage, duration, instructions);
             _prescriptionItems.Add(item);
@@ -65,7 +68,7 @@ namespace PulseID.Domain.Entities
             if (Status != PrescriptionStatus.Created)
                 throw new BusinessRuleViolationException("Can't update medications after prescription is verified.");
 
-            var item = _prescriptionItems.FirstOrDefault(i => i.Id == itemId);
+            var item = _prescriptionItems.FirstOrDefault(i => i.Id == itemId && !i.IsDeleted);
 
             if (item is null)
                 throw new BusinessRuleViolationException("Prescription item was not found.");
@@ -100,10 +103,15 @@ namespace PulseID.Domain.Entities
 
         public void RefreshStatus()
         {
-            if (!_prescriptionItems.Any())
+
+            if (Status == PrescriptionStatus.Cancelled || Status == PrescriptionStatus.Expired)
+                return;
+            var relevantItems = ActiveItems.Where(i => i.Status != PrescriptionItemStatus.Rejected).ToList();
+
+            if (!relevantItems.Any())
                 return;
 
-            if (_prescriptionItems.All(i => i.Status == PrescriptionItemStatus.Dispensed))
+            if (relevantItems.All(i => i.Status == PrescriptionItemStatus.Dispensed))
             {
                 if (Status != PrescriptionStatus.Dispensed)
                 {
@@ -111,7 +119,7 @@ namespace PulseID.Domain.Entities
                     DispensedAt = DateTime.UtcNow;
                 }
             }
-            else if (_prescriptionItems.Any(i => i.Status == PrescriptionItemStatus.Dispensed))
+            else if (relevantItems.Any(i => i.Status == PrescriptionItemStatus.Dispensed))
             {
                 Status = PrescriptionStatus.PartiallyDispensed;
             }
@@ -126,6 +134,13 @@ namespace PulseID.Domain.Entities
             {
                 throw new BusinessRuleViolationException("The prescription can't be cancelled because it is dispensed or partially dispensed");
             }
+
+            if (Status == PrescriptionStatus.Cancelled)
+                throw new BusinessRuleViolationException("The prescription is already cancelled.");
+
+            if (Status == PrescriptionStatus.Expired)
+                throw new BusinessRuleViolationException("An expired prescription can't be cancelled.");
+
             Status = PrescriptionStatus.Cancelled;
             MarkAsUpdated();
         }
