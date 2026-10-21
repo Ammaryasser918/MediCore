@@ -1,0 +1,156 @@
+using MediCore.Domain.Common;
+using MediCore.Domain.Enums;
+using MediCore.Domain.Exceptions;
+
+namespace MediCore.Domain.Entities
+{
+    public class LabTechnician : BaseEntity
+    {
+        public Guid UserId { get; private set; }
+
+        public string FullName { get; private set; } = default!;
+        public string NationalId { get; private set; } = default!;
+
+        public string LicenseNumber { get; private set; } = default!;
+        public string? LicenseDocumentPath { get; private set; }
+
+        public string PhoneNumber { get; private set; } = default!;
+        public string? PersonalImagePath { get; private set; }
+        public DateTime? DateOfBirth { get; private set; } 
+        public LabTechnicianStatus Status { get; private set; } = LabTechnicianStatus.Pending;
+
+        public Guid? LabId { get; private set; }
+        public Lab? Lab { get; private set; } = default!;
+
+        public Guid? ApprovedByLabAdminId { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+
+        public Guid? RejectedByLabAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
+
+        LabTechnician() { }
+
+        public LabTechnician(
+            Guid userId,
+            string fullName,
+            string nationalId,
+            string licenseNumber,
+            string? licenseDocumentPath,
+            string phoneNumber,
+            DateTime? dateOfBirth,
+            Guid? labId = null,
+            string? personalImagePath = null)
+        {
+            if (userId == Guid.Empty)
+                throw new ArgumentException("User Id is Required", nameof(userId));
+
+            if (labId == Guid.Empty)
+                throw new ArgumentException("Lab Id is Required", nameof(labId));
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                throw new ArgumentException("Full Name is Required", nameof(fullName));
+
+            if (string.IsNullOrWhiteSpace(nationalId))
+                throw new ArgumentException("National Id is Required", nameof(nationalId));
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
+
+            UserId = userId;
+            FullName = fullName;
+            NationalId = nationalId;
+            LicenseNumber = licenseNumber;
+            LicenseDocumentPath = licenseDocumentPath;
+            PhoneNumber = phoneNumber;
+            DateOfBirth = dateOfBirth;
+            LabId = labId;
+            PersonalImagePath = personalImagePath;
+
+            Status = LabTechnicianStatus.Pending;
+        }
+
+        public void UpdatePersonalDetails(string fullName, string nationalId, string phoneNumber, DateTime dateOfBirth)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Phone Number is Required", nameof(phoneNumber));
+            FullName = fullName;
+            NationalId = nationalId;
+            PhoneNumber = phoneNumber;
+            DateOfBirth = dateOfBirth;
+
+
+            MarkAsUpdated();
+        }
+
+        public void SetPersonalImage(string? personalImagePath)
+        {
+            PersonalImagePath = personalImagePath;
+            MarkAsUpdated();
+        }
+        public void RemovePersonalImage()
+        {
+            PersonalImagePath = null;
+            MarkAsUpdated();
+        }
+
+        public void Approve(Guid labHospitalId)
+        {
+            if (labHospitalId == Guid.Empty)
+                throw new ArgumentException("Lab Hospital Id is Required", nameof(labHospitalId));
+
+            if (ApprovedByLabAdminId.HasValue)
+                throw new BusinessRuleViolationException("This technician is already approved.");
+
+            if (string.IsNullOrWhiteSpace(LicenseNumber) &&
+                string.IsNullOrWhiteSpace(LicenseDocumentPath))
+                throw new BusinessRuleViolationException("Can't approve a technician without license details.");
+
+            ApprovedByLabAdminId = labHospitalId;
+            ApprovedAt = DateTime.UtcNow;
+            Status = LabTechnicianStatus.Approved;
+
+            MarkAsUpdated();
+        }
+
+        public void Reject(Guid labAdminId)
+        {
+            if (Status != LabTechnicianStatus.Pending)
+                throw new BusinessRuleViolationException("Can only reject pending technicians.");
+
+            RejectedByLabAdminId = labAdminId;
+            RejectedAt = DateTime.UtcNow;
+            Status = LabTechnicianStatus.Rejected;
+            MarkAsUpdated();
+        }
+
+        public void Deactivate()
+        {
+            if (Status != LabTechnicianStatus.Approved)
+                throw new BusinessRuleViolationException("Can only suspend an approved technician.");
+
+            Status = LabTechnicianStatus.Suspended;
+
+            MarkAsUpdated();
+        }
+
+        public void Reactivate()
+        {
+            if (Status != LabTechnicianStatus.Suspended)
+                throw new BusinessRuleViolationException("Can only reactivate a suspended technician.");
+
+            Status = LabTechnicianStatus.Approved;
+
+            MarkAsUpdated();
+        }
+
+        public void TransferToLab(Guid labId)
+        {
+            if (labId == Guid.Empty)
+                throw new ArgumentException("Lab Id is Required", nameof(labId));
+
+            LabId = labId;
+
+            MarkAsUpdated();
+        }
+    }
+}

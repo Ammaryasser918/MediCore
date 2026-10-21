@@ -1,0 +1,37 @@
+﻿using Microsoft.EntityFrameworkCore;
+using MediCore.Application.Interfaces.Repositories;
+using MediCore.Domain.Entities;
+using MediCore.Domain.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MediCore.Infrastructure.Persistence.Repositories
+{
+    public class AccessAuthorizationRepository : RepositoryBase<AccessAuthorization>, IAccessAuthorizationRepository
+    {
+        public AccessAuthorizationRepository(AppDbContext context) : base(context)
+        {
+        }
+
+        public async Task<IReadOnlyList<AccessAuthorization>> GetByPatientAsync(Guid patientId, CancellationToken cancellationToken = default)
+            => await _dbSet.Where(a => a.PatientId == patientId && !a.IsDeleted).OrderByDescending(a => a.RequestedAt).ToListAsync(cancellationToken);
+        public async Task<IReadOnlyList<AccessAuthorization>> GetByRequesterAsync(Guid requesterUserId, CancellationToken cancellationToken = default)
+            => await _dbSet.Where(a => a.GranteeUserId == requesterUserId && !a.IsDeleted).OrderByDescending(a => a.RequestedAt).ToListAsync(cancellationToken);
+
+        public Task<AccessAuthorization?> GetActiveAuthorizationAsync(Guid patientId, Guid granteeUserId, CancellationToken cancellationToken = default)
+            => _dbSet.FirstOrDefaultAsync(a => a.PatientId == patientId &&
+                a.GranteeUserId == granteeUserId &&
+                a.Status == AuthorizationStatus.Approved &&
+                (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow) && !a.IsDeleted,
+                cancellationToken);
+
+        public async Task<IReadOnlyList<AccessAuthorization>> GetPendingForGranteeAsync(Guid granteeUserId, CancellationToken cancellationToken = default)
+            => await _dbSet.Where(a => a.GranteeUserId == granteeUserId && a.Status == AuthorizationStatus.Pending && !a.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+
+    }
+}

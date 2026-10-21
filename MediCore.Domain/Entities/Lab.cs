@@ -1,0 +1,153 @@
+using MediCore.Domain.Common;
+using MediCore.Domain.Enums;
+using MediCore.Domain.Exceptions;
+
+namespace MediCore.Domain.Entities
+{
+    public class Lab : BaseEntity
+    {
+        public string Name { get; private set; } = default!;
+        public string Address { get; private set; } = default!;
+        public string PhoneNumber { get; private set; } = default!;
+
+        public string? LicenseNumber { get; private set; }
+        public string? LicenseDocumentPath { get; private set; }
+
+        public LabStatus Status { get; private set; } = LabStatus.Pending;
+
+        public Guid? ApprovedByLabAdminId { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+        public Guid? RejectedByLabAdminId { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
+
+        readonly List<LabTechnician> _labTechnicians = new();
+        public IReadOnlyCollection<LabTechnician> LabTechnicians => _labTechnicians.AsReadOnly();
+
+        readonly List<LabTestRequest> _testRequests = new();
+        public IReadOnlyCollection<LabTestRequest> TestRequests => _testRequests.AsReadOnly();
+
+
+        Lab() { }
+
+        public Lab(
+            string name,
+            string address,
+            string phoneNumber,
+            string? licenseNumber = null,
+            string? licenseDocumentPath = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Lab Name is Required", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentException("Lab Address is Required", nameof(address));
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Lab Phone Number is Required", nameof(phoneNumber));
+
+            Name = name;
+            Address = address;
+            PhoneNumber = phoneNumber;
+            LicenseNumber = licenseNumber;
+            LicenseDocumentPath = licenseDocumentPath;
+            Status = LabStatus.Pending;
+        }
+
+        public void UpdateDetails(
+            string name,
+            string address,
+            string phoneNumber,
+            string? licenseNumber = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Lab Name is Required", nameof(name));
+
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentException("Lab Address is Required", nameof(address));
+
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ArgumentException("Lab Phone Number is Required", nameof(phoneNumber));
+
+            Name = name;
+            Address = address;
+            PhoneNumber = phoneNumber;
+            LicenseNumber = licenseNumber;
+
+            MarkAsUpdated();
+        }
+
+        public void UpdateLicenseDocument(string documentPath)
+        {
+            if (string.IsNullOrWhiteSpace(documentPath))
+                throw new ArgumentException("License document path is required", nameof(documentPath));
+
+            LicenseDocumentPath = documentPath;
+
+            Status = LabStatus.Pending;
+            ApprovedByLabAdminId = null;
+            ApprovedAt = null;
+
+            MarkAsUpdated();
+        }
+
+        public void Approve(Guid adminId)
+        {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to approve a lab.", nameof(adminId));
+
+            if (ApprovedByLabAdminId.HasValue)
+                throw new BusinessRuleViolationException("This lab is already approved.");
+
+            if (string.IsNullOrWhiteSpace(LicenseNumber) &&
+                string.IsNullOrWhiteSpace(LicenseDocumentPath))
+            {
+                throw new BusinessRuleViolationException(
+                    "Can't approve a lab without license details.");
+            }
+
+            ApprovedByLabAdminId = adminId;
+            ApprovedAt = DateTime.UtcNow;
+            Status = LabStatus.Approved;
+
+            MarkAsUpdated();
+        }
+
+        public void Reject(Guid adminId)
+        {
+            if (adminId == Guid.Empty)
+                throw new ArgumentException("Admin Id is required to approve a lab.", nameof(adminId));
+
+            if (Status != LabStatus.Pending)
+                throw new BusinessRuleViolationException(
+                    "Can only reject pending labs.");
+
+            RejectedByLabAdminId = adminId;
+            RejectedAt = DateTime.UtcNow;
+            Status = LabStatus.Rejected;
+
+            MarkAsUpdated();
+        }
+
+        public void Deactivate()
+        {
+            if (Status != LabStatus.Approved)
+                throw new BusinessRuleViolationException(
+                    "Can only suspend an approved lab.");
+
+            Status = LabStatus.Suspended;
+
+            MarkAsUpdated();
+        }
+
+        public void Reactivate()
+        {
+            if (Status != LabStatus.Suspended)
+                throw new BusinessRuleViolationException(
+                    "Can only reactivate a suspended lab.");
+
+            Status = LabStatus.Approved;
+
+            MarkAsUpdated();
+        }
+    }
+}

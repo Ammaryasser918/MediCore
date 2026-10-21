@@ -1,0 +1,36 @@
+using MediCore.Application.DTOs.Department;
+using MediCore.Application.DTOs.Doctor;
+
+namespace MediCore.Application.Interfaces.IServices;
+
+public interface IDepartmentService
+{
+    Task<IReadOnlyList<DepartmentDto>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    Task<DepartmentDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<DepartmentDto> GetDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<DepartmentDto> CreateDepartmentAsync(Guid hospitalId, CreateDepartmentDto dto, CancellationToken cancellationToken = default);
+
+    Task<DepartmentDto> UpdateAsync(Guid id, UpdateDepartmentDto dto, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DoctorDto>> GetDoctorsAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DepartmentDto>> GetAllIncludingDeletedAsync(CancellationToken cancellationToken = default);
+
+    Task<DepartmentDto> AssignDoctorToDepartmentAsync(Guid departmentId, Guid doctorId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DepartmentDto>> GetByHospitalAsync(Guid hospitalId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DepartmentDto>> GetByHospitalIncludingDeletedAsync(Guid hospitalId, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task HardDeleteAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DepartmentDto>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    Task RestoreDepartmentAsync(Guid departmentId, CancellationToken cancellationToken = default);
+
+}
